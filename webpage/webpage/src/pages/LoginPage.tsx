@@ -59,8 +59,8 @@ const LoginPage: React.FC = () => {
               <Label htmlFor="password">密码</Label>
               <Input id="password" type="password" placeholder="请输入密码" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
             </div>
-            <Button type="submit" className="w-full mt-2" style={{ background: '#0f2a5e' }} disabled={loading}>
-              {loading ? '登录中...' : '登录'}
+            <Button type="submit" className="w-full mt-2" style={{ background: '#0f2a5e' }} loading={loading} loadingText="登录中...">
+              登录
             </Button>
           </form>
         </div>

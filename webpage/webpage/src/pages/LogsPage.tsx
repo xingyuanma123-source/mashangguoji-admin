@@ -87,7 +87,7 @@ const LogsPage: React.FC = () => {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">操作日志</h1>
+          <h1 className="text-3xl font-bold border-b pb-4 mb-6">操作日志</h1>
           <Button onClick={loadLogs} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             刷新

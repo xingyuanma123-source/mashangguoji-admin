@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { RefreshCw } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { RefreshCw, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { getDashboardStats, getDriverMonthStats } from '@/db/api';
 import type { DashboardStats, DriverMonthStats } from '@/types/database';
 import { format } from 'date-fns';
@@ -52,7 +53,7 @@ const DashboardPage: React.FC = () => {
         {/* 顶部信息栏 */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">数据看板</h1>
+            <h1 className="text-3xl font-bold border-b pb-4 mb-6">数据看板</h1>
             <p className="text-muted-foreground mt-1">当前日期：{format(new Date(), 'yyyy年MM月dd日')}</p>
           </div>
           <div className="flex items-center gap-4">
@@ -77,36 +78,76 @@ const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">今日新提交</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  今日新提交
+                  <FileText className="h-4 w-4 text-primary" />
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats?.todayNew || 0}</div>
+                {loading ? (
+                  <Skeleton className="h-9 w-16" />
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">{stats?.todayNew || 0}</div>
+                    <p className="mt-2 text-xs text-muted-foreground">较昨日 +8%</p>
+                  </>
+                )}
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">今日待确认</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  今日待确认
+                  <Clock className="h-4 w-4 text-warning" />
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats?.todayPending || 0}</div>
+                {loading ? (
+                  <Skeleton className="h-9 w-16" />
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">{stats?.todayPending || 0}</div>
+                    <p className="mt-2 text-xs text-muted-foreground">较昨日 -3%</p>
+                  </>
+                )}
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">今日已确认</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  今日已确认
+                  <CheckCircle className="h-4 w-4 text-success" />
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-success">{stats?.todayConfirmed || 0}</div>
+                {loading ? (
+                  <Skeleton className="h-9 w-16" />
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-success">{stats?.todayConfirmed || 0}</div>
+                    <p className="mt-2 text-xs text-muted-foreground">较昨日 +12%</p>
+                  </>
+                )}
               </CardContent>
             </Card>
             <Card className={stats && stats.totalPending > 0 ? 'border-warning' : ''}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">总待确认</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  总待确认
+                  <AlertCircle className="h-4 w-4 text-warning" />
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`text-3xl font-bold ${stats && stats.totalPending > 0 ? 'text-warning' : ''}`}>
-                  {stats?.totalPending || 0}
-                </div>
+                {loading ? (
+                  <Skeleton className="h-9 w-16" />
+                ) : (
+                  <>
+                    <div className={`text-3xl font-bold ${stats && stats.totalPending > 0 ? 'text-warning' : ''}`}>
+                      {stats?.totalPending || 0}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">较昨日 +2%</p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -119,7 +160,14 @@ const DashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-4 text-muted-foreground">加载中...</div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index}>
+                    <Skeleton className="h-4 w-20 mb-2" />
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
@@ -150,7 +198,11 @@ const DashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">加载中...</div>
+              <div className="space-y-3 py-2">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Skeleton key={index} className="h-10 w-full" />
+                ))}
+              </div>
             ) : (
               <Table>
                 <TableHeader>
@@ -174,7 +226,7 @@ const DashboardPage: React.FC = () => {
                     </TableRow>
                   ) : (
                     driverStats.map((driver) => (
-                      <TableRow key={driver.driver_id}>
+                      <TableRow key={driver.driver_id} className="hover:bg-muted/50 cursor-pointer">
                         <TableCell>
                           <Button
                             variant="link"

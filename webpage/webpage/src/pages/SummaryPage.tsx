@@ -300,7 +300,7 @@ const SummaryPage: React.FC = () => {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">总表</h1>
+          <h1 className="text-3xl font-bold border-b pb-4 mb-6">总表</h1>
           <div className="flex items-center gap-2">
             <Button onClick={loadRecords} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -319,9 +319,9 @@ const SummaryPage: React.FC = () => {
                 <SelectItem value="driver">按司机分组</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleExportImages} size="sm" variant="outline" disabled={exportingImages}>
+            <Button onClick={handleExportImages} size="sm" loading={exportingImages} loadingText="导出中...">
               <Image className="h-4 w-4 mr-2" />
-              {exportingImages ? '导出中...' : '导出图片'}
+              导出图片
             </Button>
           </div>
         </div>

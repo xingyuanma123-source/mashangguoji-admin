@@ -267,8 +267,8 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             取消
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? '保存中...' : '保存'}
+          <Button onClick={handleSubmit} loading={loading} loadingText="保存中...">
+            保存
           </Button>
         </DialogFooter>
       </DialogContent>

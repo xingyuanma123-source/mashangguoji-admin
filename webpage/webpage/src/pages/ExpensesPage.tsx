@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Eye, Edit, Check, RefreshCw } from 'lucide-react';
+import { Eye, Edit, Check, RefreshCw, Inbox } from 'lucide-react';
 import { getExpenseRecords, getAllDrivers, confirmExpenseRecord, batchConfirmExpenseRecords, batchUpdateCommission, createOperationLog } from '@/db/api';
 import type { ExpenseRecordWithDriver, Driver } from '@/types/database';
 import { format, startOfMonth } from 'date-fns';
@@ -178,7 +178,7 @@ const ExpensesPage: React.FC = () => {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">报账管理</h1>
+          <h1 className="text-3xl font-bold border-b pb-4 mb-6">报账管理</h1>
           <Button onClick={loadRecords} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             刷新
@@ -186,10 +186,10 @@ const ExpensesPage: React.FC = () => {
         </div>
 
         {/* 筛选栏 */}
-        <Card>
+        <Card className="bg-muted/10 border-dashed">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-2 min-w-[180px] flex-1">
                 <Label>司机</Label>
                 <Select value={filters.driverId || 'all'} onValueChange={(value) => setFilters({ ...filters, driverId: value === 'all' ? '' : value })}>
                   <SelectTrigger>
@@ -205,7 +205,7 @@ const ExpensesPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-[180px]">
                 <Label>开始日期</Label>
                 <Input
                   type="date"
@@ -213,7 +213,7 @@ const ExpensesPage: React.FC = () => {
                   onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-[180px]">
                 <Label>结束日期</Label>
                 <Input
                   type="date"
@@ -221,7 +221,7 @@ const ExpensesPage: React.FC = () => {
                   onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-[160px]">
                 <Label>状态</Label>
                 <Select value={filters.status || 'all'} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
                   <SelectTrigger>
@@ -282,12 +282,18 @@ const ExpensesPage: React.FC = () => {
                   {records.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={11} className="text-center text-muted-foreground">
-                        暂无数据
+                        <div className="flex flex-col items-center justify-center gap-2 py-6">
+                          <Inbox className="h-6 w-6 text-muted-foreground" />
+                          <span>暂无报账记录</span>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    records.map((record) => (
-                      <TableRow key={record.id}>
+                    records.map((record, index) => (
+                      <TableRow
+                        key={record.id}
+                        className={index % 2 === 0 ? 'bg-muted/20' : ''}
+                      >
                         <TableCell>
                           {record.status === 'pending' && (
                             <Checkbox
@@ -308,11 +314,11 @@ const ExpensesPage: React.FC = () => {
                         <TableCell className="text-right">¥{Number(record.commission).toFixed(2)}</TableCell>
                         <TableCell>
                           {record.status === 'pending' ? (
-                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning">
+                            <Badge variant="outline" className="border-warning text-warning">
                               待确认
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-success/10 text-success border-success">
+                            <Badge variant="outline" className="border-success text-success">
                               已确认
                             </Badge>
                           )}
