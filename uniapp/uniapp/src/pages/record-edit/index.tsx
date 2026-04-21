@@ -76,13 +76,11 @@ function RecordEdit() {
       {field: 'fee_stamp', name: '盖章'}
     ]
 
-    // 解析 note_detail，提取各费用的备注
-    // 格式：停车费(北投):35; 停车费(桂福):20; 其他名称:金额
+    // 解析 fee_location_detail，提取正常费用的地点备注
+    // 格式：停车费(北投):35; 过磅费(桂福):10
     const noteMap: Record<string, string[]> = {} // field_name -> [note, note, ...]
-    let otherNoteDetail = ''
-
-    if (recordData.note_detail) {
-      const parts = recordData.note_detail.split(';').map((s) => s.trim()).filter(Boolean)
+    if (recordData.fee_location_detail) {
+      const parts = recordData.fee_location_detail.split(';').map((s) => s.trim()).filter(Boolean)
       for (const part of parts) {
         // 匹配 "费用名(备注):金额" 格式
         const match = part.match(/^(.+?)\((.+?)\):\d+(\.\d+)?$/)
@@ -94,9 +92,6 @@ function RecordEdit() {
             if (!noteMap[found.field]) noteMap[found.field] = []
             noteMap[found.field].push(noteText)
           }
-        } else {
-          // 不匹配的归入 other 备注
-          otherNoteDetail = otherNoteDetail ? `${otherNoteDetail}; ${part}` : part
         }
       }
     }
@@ -128,13 +123,37 @@ function RecordEdit() {
       }
     }
 
-    if (recordData.note_amount > 0) {
+    // 解析 note_detail，提取 other 费用描述
+    // 格式：修车费:333; 补胎:60
+    const otherItems: FeeItem[] = []
+    if (recordData.note_detail) {
+      const parts = recordData.note_detail.split(';').map((s) => s.trim()).filter(Boolean)
+      for (const part of parts) {
+        const match = part.match(/^(.+?):(-?\d+(\.\d+)?)$/)
+        if (!match) continue
+        const otherName = match[1].trim()
+        const otherAmount = Number.parseFloat(match[2])
+        if (!otherName || Number.isNaN(otherAmount)) continue
+        otherItems.push({
+          id: `fee_${Date.now()}_${Math.random()}`,
+          field_name: 'other',
+          display_name: '其他',
+          amount: otherAmount,
+          note: otherName
+        })
+      }
+    }
+
+    if (otherItems.length > 0) {
+      items.push(...otherItems)
+    } else if (recordData.note_amount > 0) {
+      // 向后兼容旧数据：只有 note_amount，没有可解析的 note_detail
       items.push({
         id: `fee_${Date.now()}_${Math.random()}`,
         field_name: 'other',
         display_name: '其他',
         amount: recordData.note_amount,
-        note: otherNoteDetail || recordData.note_detail || ''
+        note: ''
       })
     }
 
@@ -297,18 +316,19 @@ function RecordEdit() {
       // 构建费用数据
       const feeMap: Record<string, number> = {}
       let noteAmount = 0
+      const feeLocationDetails: string[] = []
       const noteDetails: string[] = []
 
       for (const item of feeItems) {
         if (item.field_name === 'other') {
           noteAmount += item.amount
-          if (item.note) {
-            noteDetails.push(`${item.note}:${item.amount}`)
+          if (item.note?.trim()) {
+            noteDetails.push(`${item.note.trim()}:${item.amount}`)
           }
         } else {
           feeMap[item.field_name] = (feeMap[item.field_name] || 0) + item.amount
           if (item.note?.trim()) {
-            noteDetails.push(`${item.display_name}(${item.note.trim()}):${item.amount}`)
+            feeLocationDetails.push(`${item.display_name}(${item.note.trim()}):${item.amount}`)
           }
         }
       }
@@ -332,7 +352,8 @@ function RecordEdit() {
         fee_highway: feeMap.fee_highway || 0,
         fee_stamp: feeMap.fee_stamp || 0,
         note_amount: noteAmount,
-        note_detail: noteDetails.length > 0 ? noteDetails.join('; ') : note || null,
+        fee_location_detail: feeLocationDetails.length > 0 ? feeLocationDetails.join('; ') : null,
+        note_detail: noteDetails.length > 0 ? noteDetails.join('; ') : null,
         total_expense: totalExpense,
         receipt_images: allImages.length > 0 ? allImages : null
       }

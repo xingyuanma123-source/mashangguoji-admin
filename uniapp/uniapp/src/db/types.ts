@@ -36,6 +36,7 @@ export interface ExpenseRecord {
   fee_tarpaulin: number
   fee_highway: number
   fee_stamp: number
+  fee_location_detail?: string | null
   note_amount: number
   note_detail: string | null
   total_expense: number
@@ -92,7 +93,6 @@ export interface VehicleCard {
   route: string
   fee_items: FeeItem[]
   receipt_images: UploadFileInput[]
-  note: string
   total: number
 }
 

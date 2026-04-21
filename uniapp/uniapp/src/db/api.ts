@@ -12,6 +12,37 @@ import type {
 
 export type {Driver}
 
+function buildExpenseRecordPayload(record: Partial<ExpenseRecord>): Partial<ExpenseRecord> {
+  return {
+    driver_id: record.driver_id,
+    record_date: record.record_date,
+    plate_number: record.plate_number,
+    route: record.route,
+    fee_weighing: record.fee_weighing,
+    fee_container: record.fee_container,
+    fee_overnight: record.fee_overnight,
+    fee_vn_overtime: record.fee_vn_overtime,
+    fee_vn_key: record.fee_vn_key,
+    fee_parking: record.fee_parking,
+    fee_newpost: record.fee_newpost,
+    fee_taxi: record.fee_taxi,
+    fee_water: record.fee_water,
+    fee_tarpaulin: record.fee_tarpaulin,
+    fee_highway: record.fee_highway,
+    fee_stamp: record.fee_stamp,
+    fee_location_detail: record.fee_location_detail,
+    note_amount: record.note_amount,
+    note_detail: record.note_detail,
+    total_expense: record.total_expense,
+    commission: record.commission,
+    receipt_images: record.receipt_images,
+    status: record.status,
+    confirmed_by: record.confirmed_by,
+    confirmed_at: record.confirmed_at,
+    is_overtime: record.is_overtime
+  }
+}
+
 // ==================== 司机相关 ====================
 
 /**
@@ -115,7 +146,8 @@ export async function getFeeTypes() {
  * 创建报账记录
  */
 export async function createExpenseRecord(record: Partial<ExpenseRecord>) {
-  const {data, error} = await supabase.from('expense_records').insert(record).select().maybeSingle()
+  const payload = buildExpenseRecordPayload(record)
+  const {data, error} = await supabase.from('expense_records').insert(payload).select().maybeSingle()
 
   if (error) {
     console.error('创建报账记录失败:', error)
@@ -129,7 +161,8 @@ export async function createExpenseRecord(record: Partial<ExpenseRecord>) {
  * 批量创建报账记录
  */
 export async function createExpenseRecords(records: Partial<ExpenseRecord>[]) {
-  const {data, error} = await supabase.from('expense_records').insert(records).select()
+  const payload = records.map(buildExpenseRecordPayload)
+  const {data, error} = await supabase.from('expense_records').insert(payload).select()
 
   if (error) {
     console.error('批量创建报账记录失败:', error)
@@ -143,9 +176,10 @@ export async function createExpenseRecords(records: Partial<ExpenseRecord>[]) {
  * 更新报账记录
  */
 export async function updateExpenseRecord(id: number, updates: Partial<ExpenseRecord>) {
+  const payload = buildExpenseRecordPayload(updates)
   const {data, error} = await supabase
     .from('expense_records')
-    .update(updates)
+    .update(payload)
     .eq('id', id)
     .select()
     .maybeSingle()

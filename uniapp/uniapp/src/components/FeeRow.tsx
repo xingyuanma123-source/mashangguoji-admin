@@ -38,24 +38,23 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
   const selectedIndex = feeTypes.findIndex((t) => t.field_name === feeItem.field_name)
 
   return (
-    <View className="flex flex-col space-y-2">
-      <View className="flex flex-row items-center space-x-2">
+    <View className="surface-card p-3">
+      <View className="flex flex-row items-center gap-2">
         <Picker
           mode="selector"
           range={feeTypes}
           rangeKey="display_name"
           value={selectedIndex}
-          onChange={handleTypeChange}>
-          <View className="flex-1 bg-input rounded-xl border border-border px-4 py-4">
-            <Text className="text-foreground text-xl">
-              {feeItem.display_name || '选择费用类型'}
-            </Text>
+          onChange={handleTypeChange}
+          className="flex-1">
+          <View className="rounded-xl border border-border bg-background px-3 py-3">
+            <Text className="text-lg text-foreground">{feeItem.display_name || '选择费用类型'}</Text>
           </View>
         </Picker>
 
-        <View className="w-32 bg-input rounded-xl border border-border px-4 py-4">
+        <View className="w-32 rounded-xl border border-border bg-background px-3 py-3">
           <Input
-            className="w-full text-foreground text-xl text-right"
+            className="w-full text-lg text-right text-foreground"
             type="digit"
             placeholder="金额"
             value={feeItem.amount > 0 ? String(feeItem.amount) : ''}
@@ -63,15 +62,15 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
           />
         </View>
 
-        <View className="w-12 h-12 flex items-center justify-center" onClick={onDelete}>
-          <View className="i-mdi-close-circle text-destructive text-3xl" />
+        <View className="h-10 w-10 flex items-center justify-center rounded-full bg-destructive/10" onClick={onDelete}>
+          <View className="i-mdi-close text-destructive text-2xl" />
         </View>
       </View>
 
       {feeItem.field_name === 'other' && (
-        <View className="bg-input rounded-xl border border-border px-4 py-4">
+        <View className="mt-2 rounded-xl border border-border bg-background px-3 py-3">
           <Input
-            className="w-full text-foreground text-xl"
+            className="w-full text-lg text-foreground"
             placeholder="请输入具体费用名称（必填）"
             value={feeItem.note || ''}
             onInput={handleNoteChange}
@@ -80,9 +79,9 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
       )}
 
       {feeItem.field_name && feeItem.field_name !== 'other' && (
-        <View className="bg-input rounded-xl border border-border px-4 py-3 ml-1">
+        <View className="mt-2 rounded-xl border border-border bg-background px-3 py-3">
           <Input
-            className="w-full text-foreground text-lg"
+            className="w-full text-base text-foreground"
             placeholder="备注地点/说明（选填，如：北投）"
             value={feeItem.note || ''}
             onInput={handleNoteChange}

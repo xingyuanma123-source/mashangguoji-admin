@@ -92,7 +92,6 @@ function Submit() {
       route: '',
       fee_items: [],
       receipt_images: [],
-      note: '',
       total: 0
     }
     setVehicles((prev) => [...prev, newCard])
@@ -218,19 +217,20 @@ function Submit() {
       const records: Partial<ExpenseRecord>[] = vehicles.map((v, index) => {
         const feeMap: Record<string, number> = {}
         let noteAmount = 0
+        const feeLocationDetails: string[] = []
         const noteDetails: string[] = []
 
         for (const item of v.fee_items) {
           if (item.field_name === 'other') {
             noteAmount += item.amount
-            if (item.note) {
-              noteDetails.push(`${item.note}:${item.amount}`)
+            if (item.note?.trim()) {
+              noteDetails.push(`${item.note.trim()}:${item.amount}`)
             }
           } else {
             feeMap[item.field_name] = (feeMap[item.field_name] || 0) + item.amount
-            // 有备注地点/说明的费用也记录到note_detail
+            // 正常费用地点明细写入 fee_location_detail
             if (item.note?.trim()) {
-              noteDetails.push(`${item.display_name}(${item.note.trim()}):${item.amount}`)
+              feeLocationDetails.push(`${item.display_name}(${item.note.trim()}):${item.amount}`)
             }
           }
         }
@@ -253,7 +253,8 @@ function Submit() {
           fee_highway: feeMap.fee_highway || 0,
           fee_stamp: feeMap.fee_stamp || 0,
           note_amount: noteAmount,
-          note_detail: noteDetails.length > 0 ? noteDetails.join('; ') : v.note || null,
+          fee_location_detail: feeLocationDetails.length > 0 ? feeLocationDetails.join('; ') : null,
+          note_detail: noteDetails.length > 0 ? noteDetails.join('; ') : null,
           total_expense: v.total,
           commission: 0,
           receipt_images: allImages[index].length > 0 ? allImages[index] : null,
@@ -291,36 +292,36 @@ function Submit() {
   }, [feeTypes, vehicles.length, addVehicle])
 
   return (
-    <View className="min-h-screen bg-gradient-subtle">
+    <View className="page-shell">
       <ScrollView className="w-full" scrollY>
-        <View className="px-4 py-6">
-          <View className="bg-card rounded-2xl p-6 shadow-elegant mb-6">
+        <View className="px-4 py-5">
+          <View className="surface-card p-4 mb-4">
             <View className="flex flex-col space-y-4">
               <View className="flex flex-row items-center justify-between">
-                <Text className="text-2xl font-semibold text-foreground">司机姓名</Text>
-                <Text className="text-2xl text-primary font-bold">{driver?.name}</Text>
+                <Text className="text-lg font-semibold text-foreground">司机姓名</Text>
+                <Text className="text-lg text-primary font-semibold">{driver?.name}</Text>
               </View>
 
               <View className="flex flex-col space-y-2">
-                <Text className="text-xl text-foreground font-medium">报账日期 <Text className="text-destructive">*</Text></Text>
+                <Text className="text-base text-foreground font-medium">报账日期 <Text className="text-destructive">*</Text></Text>
                 <View className="flex flex-row items-center space-x-3">
                   <Picker mode="date" value={selectedDate || todayStr} onChange={handleDateChange} className="flex-1">
                     <View className={`rounded-xl border px-4 py-4 ${selectedDate ? 'bg-input border-border' : 'bg-input border-destructive'}`}>
-                      <Text className={`text-xl ${selectedDate ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      <Text className={`text-base ${selectedDate ? 'text-foreground' : 'text-muted-foreground'}`}>
                         {selectedDate || '请选择日期'}
                       </Text>
                     </View>
                   </Picker>
                   <View
-                    className="bg-primary/10 rounded-xl px-4 py-4"
+                    className="soft-chip px-4 py-4"
                     onClick={() => setSelectedDate(todayStr)}>
-                    <Text className="text-xl text-primary font-medium">今天</Text>
+                    <Text className="text-base text-primary font-medium">今天</Text>
                   </View>
                 </View>
               </View>
 
               <View className="flex flex-row items-center justify-between">
-                <Text className="text-xl text-foreground font-medium">是否加班</Text>
+                <Text className="text-base text-foreground font-medium">是否加班</Text>
                 <Switch checked={isOvertime} onChange={handleOvertimeChange} color="#3b82f6" />
               </View>
             </View>
@@ -336,26 +337,28 @@ function Submit() {
             />
           ))}
 
-          <View
-            className="flex flex-row items-center justify-center py-4 bg-card rounded-2xl shadow-elegant mb-6"
-            onClick={addVehicle}>
-            <View className="i-mdi-plus-circle text-primary text-3xl mr-2" />
-            <Text className="text-2xl text-primary font-semibold">添加车辆</Text>
+          <View className="surface-card p-3 mb-4">
+            <View
+              className="flex flex-row items-center justify-center py-3 rounded-xl border border-dashed border-primary/50 bg-primary/5"
+              onClick={addVehicle}>
+              <View className="i-mdi-plus-circle text-primary text-2xl mr-2" />
+              <Text className="text-base text-primary font-semibold">添加车辆</Text>
+            </View>
           </View>
 
-          <View className="bg-primary/10 rounded-2xl p-6 mb-6">
+          <View className="surface-card bg-primary/10 p-4 mb-4">
             <View className="flex flex-row items-center justify-between">
-              <Text className="text-2xl text-foreground font-semibold">今日费用合计</Text>
-              <Text className="text-3xl font-bold text-primary">¥{getTotalExpense().toFixed(2)}</Text>
+              <Text className="text-base text-foreground font-medium">今日费用合计</Text>
+              <Text className="text-2xl font-bold text-primary">¥{getTotalExpense().toFixed(2)}</Text>
             </View>
           </View>
 
           <Button
-            className="w-full bg-primary text-primary-foreground text-2xl font-semibold rounded-2xl"
+            className="w-full bg-primary text-primary-foreground rounded-xl"
             onClick={handleSubmit}
             disabled={loading}>
-            <View className="py-4">
-              <Text>{loading ? '处理中...' : '提交报账'}</Text>
+            <View className="py-3">
+              <Text className="text-base font-semibold">{loading ? '处理中...' : '提交报账'}</Text>
             </View>
           </Button>
         </View>
@@ -442,10 +445,6 @@ function Submit() {
                       </View>
                     )}
 
-                    {/* 备注 */}
-                    {v.note ? (
-                      <Text className="text-lg text-muted-foreground mt-2">💬 {v.note}</Text>
-                    ) : null}
                   </View>
                 ))}
 
