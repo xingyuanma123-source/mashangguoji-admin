@@ -6,6 +6,7 @@ import FeeRow from '@/components/FeeRow'
 import {withRouteGuard} from '@/components/RouteGuard'
 import {checkVehicleExists, fetchOtherFees, getExpenseRecordById, getFeeTypes, updateExpenseRecord} from '@/db/api'
 import type {ExpenseRecord, FeeItem, FeeType, OtherFeeItem, UploadFileInput} from '@/db/types'
+import {parseFeeLocationDetail} from '@/utils/feeLocation'
 import {chooseImages, getImageUrl, uploadFiles} from '@/utils/upload'
 
 function RecordEdit() {
@@ -79,22 +80,13 @@ function RecordEdit() {
     // 解析 fee_location_detail，提取正常费用的地点备注
     // 格式：停车费(北投):35; 过磅费(桂福):10
     const noteMap: Record<string, string[]> = {} // field_name -> [note, note, ...]
-    if (recordData.fee_location_detail) {
-      const parts = recordData.fee_location_detail.split(';').map((s) => s.trim()).filter(Boolean)
-      for (const part of parts) {
-        // 匹配 "费用名(备注):金额" 格式
-        const match = part.match(/^(.+?)\((.+?)\):\d+(\.\d+)?$/)
-        if (match) {
-          const displayName = match[1].trim()
-          const noteText = match[2].trim()
-          const found = feeFields.find((f) => f.name === displayName)
-          if (found) {
-            if (!noteMap[found.field]) noteMap[found.field] = []
-            noteMap[found.field].push(noteText)
-          }
-        }
-      }
-    }
+    const locationMap = parseFeeLocationDetail(recordData.fee_location_detail)
+    Object.entries(locationMap).forEach(([displayName, items]) => {
+      const found = feeFields.find((f) => f.name === displayName)
+      if (!found) return
+
+      noteMap[found.field] = items.map((item) => item.location)
+    })
 
     for (const {field, name} of feeFields) {
       const amount = recordData[field as keyof ExpenseRecord] as number

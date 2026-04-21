@@ -56,7 +56,7 @@ function Submit() {
 
     // 检查暂存是否有实质内容（至少一辆车有车牌或费用）
     const hasRealContent = draft.vehicles.some(
-      (v: {plate_number?: string; fee_items?: unknown[]}) => v.plate_number?.trim() || v.fee_items?.length > 0
+      (v: {plate_number?: string; fee_items?: unknown[]}) => v.plate_number?.trim() || (v.fee_items?.length ?? 0) > 0
     )
     if (!hasRealContent) {
       Taro.removeStorageSync(STORAGE_KEY)
@@ -189,6 +189,10 @@ function Submit() {
   // 确认后真正提交
   const handleConfirmSubmit = async () => {
     if (loading) return
+    if (!driver) {
+      Taro.showToast({title: '请先登录', icon: 'none'})
+      return
+    }
     setLoading(true)
     setShowConfirm(false)
 
@@ -340,54 +344,47 @@ function Submit() {
       </View>
 
       <View className="px-4 py-3">
-        <ScrollView className="w-full whitespace-nowrap" scrollX enableFlex>
-          <View className="flex flex-row items-center gap-3 pr-1">
-            {vehicles.map((vehicle, index) => {
-              const isActive = index === activeVehicleIndex
-              const vehicleLabel = vehicle.plate_number?.trim() || `车辆${index + 1}`
+        <View className="mb-3">
+          <ScrollView className="w-full whitespace-nowrap" scrollX enableFlex>
+            <View className="flex flex-row items-center gap-3 pr-1">
+              {vehicles.map((vehicle, index) => {
+                const isActive = index === activeVehicleIndex
+                const vehicleLabel = vehicle.plate_number?.trim() || `车辆${index + 1}`
 
-              return (
-                <View
-                  key={vehicle.id}
-                  className={`relative shrink-0 rounded-full px-4 py-3 ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}
-                  onClick={() => setActiveVehicleIndex(index)}>
-                  <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
-                    {vehicleLabel}
-                  </Text>
-                  {vehicles.length > 1 && (
-                    <View
-                      className={`absolute -right-1 -top-1 h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-foreground/25' : 'bg-muted'}`}
-                      onClick={(e) => {
-                        e.stopPropagation?.()
-                        deleteVehicle(index)
-                      }}>
-                      <Text className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>×</Text>
-                    </View>
-                  )}
-                </View>
-              )
-            })}
+                return (
+                  <View
+                    key={vehicle.id}
+                    className={`relative shrink-0 rounded-full px-4 py-3 ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}
+                    onClick={() => setActiveVehicleIndex(index)}>
+                    <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
+                      {vehicleLabel}
+                    </Text>
+                    {vehicles.length > 1 && (
+                      <View
+                        className={`absolute -right-1 -top-1 h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-foreground/25' : 'bg-muted'}`}
+                        onClick={(e) => {
+                          e.stopPropagation?.()
+                          deleteVehicle(index)
+                        }}>
+                        <Text className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>×</Text>
+                      </View>
+                    )}
+                  </View>
+                )
+              })}
 
-            <View
-              className="shrink-0 rounded-full border border-dashed border-primary/50 bg-primary/5 px-4 py-3"
-              onClick={addVehicle}>
-              <Text className="text-lg font-semibold text-primary">+</Text>
+              <View
+                className="shrink-0 rounded-full border border-dashed border-primary/50 bg-primary/5 px-4 py-3"
+                onClick={addVehicle}>
+                <Text className="text-lg font-semibold text-primary">+</Text>
+              </View>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </View>
 
       <ScrollView className="w-full flex-1" scrollY>
-        <View className="px-4 pt-1 pb-40">
-          <View className="surface-card p-4 mb-4">
-            <View className="flex flex-row items-center justify-between">
-              <Text className="text-lg font-semibold text-foreground">当前车辆</Text>
-              <Text className="text-base text-muted-foreground">
-                {vehicles.length > 0 ? `${activeVehicleIndex + 1}/${vehicles.length}` : '0/0'}
-              </Text>
-            </View>
-          </View>
-
+        <View className="px-4 pt-1 pb-6">
           {currentVehicle && (
             <VehicleCardComponent
               key={currentVehicle.id}
@@ -397,20 +394,11 @@ function Submit() {
               onDelete={() => deleteVehicle(activeVehicleIndex)}
             />
           )}
-
-          {currentVehicle && (
-            <View className="surface-card bg-primary/5 p-4 mb-4">
-              <View className="flex flex-row items-center justify-between">
-                <Text className="text-base text-foreground font-medium">本车费用小计</Text>
-                <Text className="text-2xl font-bold text-primary">¥{currentVehicle.total.toFixed(2)}</Text>
-              </View>
-            </View>
-          )}
         </View>
       </ScrollView>
 
       <View className="border-t border-border bg-background/95 px-4 pb-6 pt-4">
-        <View className="surface-card bg-primary/10 p-4 mb-4">
+        <View className="surface-card bg-primary/10 p-4 mb-2">
             <View className="flex flex-row items-center justify-between">
               <Text className="text-base text-foreground font-medium">今日费用合计</Text>
               <Text className="text-2xl font-bold text-primary">¥{getTotalExpense().toFixed(2)}</Text>
