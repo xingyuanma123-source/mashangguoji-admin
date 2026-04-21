@@ -1,13 +1,14 @@
 // 数据库查询 API 封装
 import {supabase} from '@/client/supabase'
 import type {
-  Driver,
-  Vehicle,
-  ExpenseRecord,
   AdvanceFundRecord,
+  Driver,
+  ExpenseRecord,
   FeeType,
+  FundStats,
   MonthlyStats,
-  FundStats
+  OtherFeeItem,
+  Vehicle
 } from './types'
 
 export type {Driver}
@@ -41,6 +42,49 @@ function buildExpenseRecordPayload(record: Partial<ExpenseRecord>): Partial<Expe
     confirmed_at: record.confirmed_at,
     is_overtime: record.is_overtime
   }
+}
+
+function normalizeOtherFees(otherFees?: OtherFeeItem[] | null) {
+  return (otherFees || [])
+    .map((item, index) => ({
+      name: item.name?.trim() || '',
+      amount: Number(item.amount) || 0,
+      sort_order: item.sort_order ?? index
+    }))
+    .filter((item) => item.name && item.amount > 0)
+}
+
+async function replaceExpenseOtherFees(expenseRecordId: number, otherFees?: OtherFeeItem[] | null) {
+  const {error: deleteError} = await supabase
+    .from('expense_other_fees')
+    .delete()
+    .eq('expense_record_id', expenseRecordId)
+
+  if (deleteError) {
+    console.error('清理其他费用明细失败:', deleteError)
+    return {error: deleteError}
+  }
+
+  const normalized = normalizeOtherFees(otherFees)
+  if (normalized.length === 0) {
+    return {error: null}
+  }
+
+  const payload = normalized.map((item) => ({
+    expense_record_id: expenseRecordId,
+    name: item.name,
+    amount: item.amount,
+    sort_order: item.sort_order
+  }))
+
+  const {error: insertError} = await supabase.from('expense_other_fees').insert(payload)
+
+  if (insertError) {
+    console.error('写入其他费用明细失败:', insertError)
+    return {error: insertError}
+  }
+
+  return {error: null}
 }
 
 // ==================== 司机相关 ====================
@@ -154,7 +198,23 @@ export async function createExpenseRecord(record: Partial<ExpenseRecord>) {
     return {data: null, error}
   }
 
-  return {data: data as ExpenseRecord | null, error: null}
+  const createdRecord = data as ExpenseRecord | null
+  if (createdRecord?.id && record.other_fees?.length) {
+    const childResult = await replaceExpenseOtherFees(createdRecord.id, record.other_fees)
+    if (childResult.error) {
+      return {data: createdRecord, error: childResult.error}
+    }
+  }
+
+  return {
+    data: createdRecord
+      ? {
+          ...createdRecord,
+          other_fees: normalizeOtherFees(record.other_fees)
+        }
+      : null,
+    error: null
+  }
 }
 
 /**
@@ -169,7 +229,26 @@ export async function createExpenseRecords(records: Partial<ExpenseRecord>[]) {
     return {data: [], error}
   }
 
-  return {data: Array.isArray(data) ? (data as ExpenseRecord[]) : [], error: null}
+  const createdRecords = Array.isArray(data) ? (data as ExpenseRecord[]) : []
+
+  for (let index = 0; index < createdRecords.length; index++) {
+    const createdRecord = createdRecords[index]
+    const sourceRecord = records[index]
+    if (!createdRecord?.id || !sourceRecord?.other_fees?.length) continue
+
+    const childResult = await replaceExpenseOtherFees(createdRecord.id, sourceRecord.other_fees)
+    if (childResult.error) {
+      return {data: createdRecords, error: childResult.error}
+    }
+  }
+
+  return {
+    data: createdRecords.map((record, index) => ({
+      ...record,
+      other_fees: normalizeOtherFees(records[index]?.other_fees)
+    })),
+    error: null
+  }
 }
 
 /**
@@ -189,7 +268,36 @@ export async function updateExpenseRecord(id: number, updates: Partial<ExpenseRe
     return {data: null, error}
   }
 
-  return {data: data as ExpenseRecord | null, error: null}
+  const childResult = await replaceExpenseOtherFees(id, updates.other_fees)
+  if (childResult.error) {
+    return {data: data as ExpenseRecord | null, error: childResult.error}
+  }
+
+  return {
+    data: data
+      ? {
+          ...(data as ExpenseRecord),
+          other_fees: normalizeOtherFees(updates.other_fees)
+        }
+      : null,
+    error: null
+  }
+}
+
+export async function fetchOtherFees(recordId: number) {
+  const {data, error} = await supabase
+    .from('expense_other_fees')
+    .select('*')
+    .eq('expense_record_id', recordId)
+    .order('sort_order', {ascending: true})
+    .order('id', {ascending: true})
+
+  if (error) {
+    console.error('获取其他费用明细失败:', error)
+    return {data: [], error}
+  }
+
+  return {data: Array.isArray(data) ? (data as OtherFeeItem[]) : [], error: null}
 }
 
 /**
@@ -248,7 +356,23 @@ export async function getExpenseRecordById(id: number) {
     return {data: null, error}
   }
 
-  return {data: data as ExpenseRecord | null, error: null}
+  const record = data as ExpenseRecord | null
+  if (!record) {
+    return {data: null, error: null}
+  }
+
+  const otherFeesRes = await fetchOtherFees(id)
+  if (otherFeesRes.error) {
+    return {data: record, error: otherFeesRes.error}
+  }
+
+  return {
+    data: {
+      ...record,
+      other_fees: otherFeesRes.data
+    },
+    error: null
+  }
 }
 
 /**

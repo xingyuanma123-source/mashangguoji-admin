@@ -1,9 +1,9 @@
 // 车辆卡片组件
-import {View, Text, Input, Image} from '@tarojs/components'
-import {useState, useEffect} from 'react'
+import {Image, Input, Text, View} from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import type {VehicleCard, FeeType, FeeItem} from '@/db/types'
-import {searchVehicles, checkVehicleExists} from '@/db/api'
+import {useEffect, useState} from 'react'
+import {checkVehicleExists, searchVehicles} from '@/db/api'
+import type {FeeItem, FeeType, VehicleCard} from '@/db/types'
 import {chooseImages} from '@/utils/upload'
 import FeeRow from './FeeRow'
 
@@ -62,9 +62,22 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
     })
   }
 
-  const updateFeeItem = (index: number, item: FeeItem) => {
-    const newItems = [...card.fee_items]
-    newItems[index] = item
+  const addOtherFeeItem = () => {
+    const newItem: FeeItem = {
+      id: `other_${Date.now()}_${Math.random()}`,
+      field_name: 'other',
+      display_name: '其他',
+      amount: 0,
+      note: ''
+    }
+    onChange({
+      ...card,
+      fee_items: [...card.fee_items, newItem]
+    })
+  }
+
+  const updateFeeItem = (itemId: string, item: FeeItem) => {
+    const newItems = card.fee_items.map((fee) => (fee.id === itemId ? item : fee))
     const total = newItems.reduce((sum, fee) => sum + (fee.amount || 0), 0)
     onChange({
       ...card,
@@ -73,8 +86,8 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
     })
   }
 
-  const deleteFeeItem = (index: number) => {
-    const newItems = card.fee_items.filter((_, i) => i !== index)
+  const deleteFeeItem = (itemId: string) => {
+    const newItems = card.fee_items.filter((item) => item.id !== itemId)
     const total = newItems.reduce((sum, fee) => sum + (fee.amount || 0), 0)
     onChange({
       ...card,
@@ -125,6 +138,10 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
       : plateValid === 'invalid'
         ? 'border-orange-500'
         : 'border-border'
+
+  const normalFeeTypes = feeTypes.filter((item) => item.field_name !== 'other')
+  const normalFeeItems = card.fee_items.filter((item) => item.field_name !== 'other')
+  const otherFeeItems = card.fee_items.filter((item) => item.field_name === 'other')
 
   return (
     <View className="surface-card p-4 mb-4">
@@ -194,19 +211,19 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
 
           <View>
             <View className="flex flex-row items-center justify-between mb-2">
-              <Text className="text-base text-muted-foreground">费用明细</Text>
+              <Text className="text-base text-muted-foreground">普通费用</Text>
               <View className="soft-chip px-3 py-1">
-                <Text className="text-sm text-muted-foreground">{card.fee_items.length} 项</Text>
+                <Text className="text-sm text-muted-foreground">{normalFeeItems.length} 项</Text>
               </View>
             </View>
             <View className="flex flex-col gap-2">
-              {card.fee_items.map((item, index) => (
+              {normalFeeItems.map((item) => (
                 <FeeRow
                   key={item.id}
                   feeItem={item}
-                  feeTypes={feeTypes}
-                  onChange={(newItem) => updateFeeItem(index, newItem)}
-                  onDelete={() => deleteFeeItem(index)}
+                  feeTypes={normalFeeTypes}
+                  onChange={(newItem) => updateFeeItem(item.id, newItem)}
+                  onDelete={() => deleteFeeItem(item.id)}
                 />
               ))}
             </View>
@@ -215,11 +232,61 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
             </View>
           </View>
 
+          <View className="border-t border-border/60 pt-4">
+            <View className="flex flex-row items-center justify-between mb-2">
+              <Text className="text-base text-muted-foreground">其他费用</Text>
+              <View className="soft-chip px-3 py-1">
+                <Text className="text-sm text-muted-foreground">{otherFeeItems.length} 项</Text>
+              </View>
+            </View>
+            <View className="flex flex-col gap-2">
+              {otherFeeItems.map((item) => (
+                <View key={item.id} className="flex flex-row items-center gap-2">
+                  <View className="min-w-0 basis-3/5 rounded-xl border border-border bg-background px-3 py-3">
+                    <Input
+                      className="w-full text-lg text-foreground"
+                      placeholder="请输入费用名称"
+                      value={item.note || ''}
+                      onInput={(e) =>
+                        updateFeeItem(item.id, {
+                          ...item,
+                          note: e.detail.value
+                        })
+                      }
+                    />
+                  </View>
+                  <View className="basis-2/5 rounded-xl border border-border bg-background px-3 py-3">
+                    <Input
+                      className="w-full text-lg text-right text-foreground"
+                      type="digit"
+                      placeholder="金额"
+                      value={item.amount > 0 ? String(item.amount) : ''}
+                      onInput={(e) =>
+                        updateFeeItem(item.id, {
+                          ...item,
+                          amount: e.detail.value ? Number.parseFloat(e.detail.value) : 0
+                        })
+                      }
+                    />
+                  </View>
+                  <View
+                    className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                    onClick={() => deleteFeeItem(item.id)}>
+                    <View className="i-mdi-close text-destructive text-2xl" />
+                  </View>
+                </View>
+              ))}
+            </View>
+            <View className="mt-2 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5 py-3 flex items-center justify-center" onClick={addOtherFeeItem}>
+              <Text className="text-base font-medium text-emerald-600">+ 添加其他费用</Text>
+            </View>
+          </View>
+
           <View>
             <Text className="text-base text-muted-foreground mb-2 block">凭证图片（最多9张）</Text>
             <View className="flex flex-row flex-wrap gap-2">
               {card.receipt_images.map((img, index) => (
-                <View key={index} className="relative h-20 w-20">
+                <View key={img.path} className="relative h-20 w-20">
                   <Image
                     src={img.path}
                     className="h-full w-full rounded-lg"

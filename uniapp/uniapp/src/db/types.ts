@@ -48,6 +48,15 @@ export interface ExpenseRecord {
   is_overtime: boolean
   created_at: string
   updated_at: string
+  other_fees?: OtherFeeItem[]
+}
+
+export interface OtherFeeItem {
+  id?: number
+  expense_record_id?: number
+  name: string
+  amount: number
+  sort_order?: number
 }
 
 export interface ServiceStaff {

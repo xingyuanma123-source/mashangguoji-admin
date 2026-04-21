@@ -1,13 +1,13 @@
 // 报账提交页（首页）
-import {View, Text, Picker, Switch, Button, ScrollView, Image} from '@tarojs/components'
-import {useState, useEffect, useCallback} from 'react'
+import {Button, Image, Picker, ScrollView, Switch, Text, View} from '@tarojs/components'
 import Taro, {useDidShow} from '@tarojs/taro'
-import {useAuth} from '@/contexts/AuthContext'
+import {useCallback, useEffect, useState} from 'react'
 import {withRouteGuard} from '@/components/RouteGuard'
-import type {VehicleCard, FeeType, ExpenseRecord} from '@/db/types'
-import {getFeeTypes, createExpenseRecords} from '@/db/api'
-import {uploadFiles, getImageUrl} from '@/utils/upload'
 import VehicleCardComponent from '@/components/VehicleCard'
+import {useAuth} from '@/contexts/AuthContext'
+import {createExpenseRecords, getFeeTypes} from '@/db/api'
+import type {ExpenseRecord, FeeType, OtherFeeItem, VehicleCard} from '@/db/types'
+import {uploadFiles} from '@/utils/upload'
 
 const STORAGE_KEY = 'expense_draft'
 
@@ -55,7 +55,7 @@ function Submit() {
 
     // 检查暂存是否有实质内容（至少一辆车有车牌或费用）
     const hasRealContent = draft.vehicles.some(
-      (v: any) => v.plate_number?.trim() || v.fee_items?.length > 0
+      (v: {plate_number?: string; fee_items?: unknown[]}) => v.plate_number?.trim() || v.fee_items?.length > 0
     )
     if (!hasRealContent) {
       Taro.removeStorageSync(STORAGE_KEY)
@@ -77,11 +77,11 @@ function Submit() {
     })
   })
 
-  const handleDateChange = (e: any) => {
+  const handleDateChange = (e: {detail: {value: string}}) => {
     setSelectedDate(e.detail.value)
   }
 
-  const handleOvertimeChange = (e: any) => {
+  const handleOvertimeChange = (e: {detail: {value: boolean}}) => {
     setIsOvertime(e.detail.value)
   }
 
@@ -216,15 +216,17 @@ function Submit() {
       // 构建报账记录
       const records: Partial<ExpenseRecord>[] = vehicles.map((v, index) => {
         const feeMap: Record<string, number> = {}
-        let noteAmount = 0
         const feeLocationDetails: string[] = []
-        const noteDetails: string[] = []
+        const otherFees: OtherFeeItem[] = []
 
         for (const item of v.fee_items) {
           if (item.field_name === 'other') {
-            noteAmount += item.amount
             if (item.note?.trim()) {
-              noteDetails.push(`${item.note.trim()}:${item.amount}`)
+              otherFees.push({
+                name: item.note.trim(),
+                amount: item.amount,
+                sort_order: otherFees.length
+              })
             }
           } else {
             feeMap[item.field_name] = (feeMap[item.field_name] || 0) + item.amount
@@ -236,7 +238,7 @@ function Submit() {
         }
 
         return {
-          driver_id: driver!.id,
+          driver_id: driver.id,
           record_date: selectedDate,
           plate_number: v.plate_number,
           route: v.route || null,
@@ -252,9 +254,10 @@ function Submit() {
           fee_tarpaulin: feeMap.fee_tarpaulin || 0,
           fee_highway: feeMap.fee_highway || 0,
           fee_stamp: feeMap.fee_stamp || 0,
-          note_amount: noteAmount,
+          note_amount: otherFees.reduce((sum, item) => sum + item.amount, 0),
           fee_location_detail: feeLocationDetails.length > 0 ? feeLocationDetails.join('; ') : null,
-          note_detail: noteDetails.length > 0 ? noteDetails.join('; ') : null,
+          note_detail: otherFees.length > 0 ? otherFees.map((item) => `${item.name}:${item.amount}`).join('; ') : null,
+          other_fees: otherFees,
           total_expense: v.total,
           commission: 0,
           receipt_images: allImages[index].length > 0 ? allImages[index] : null,
@@ -395,7 +398,7 @@ function Submit() {
             {/* 可滚动内容 */}
             <ScrollView scrollY style={{flex: 1, overflow: 'hidden'}}>
               <View className="px-6 py-4 flex flex-col space-y-5">
-                {vehicles.map((v, vi) => (
+                {vehicles.map((v) => (
                   <View key={v.id} className="bg-muted rounded-2xl p-4">
                     {/* 车辆标题行 */}
                     <View className="flex flex-row items-center justify-between mb-2">
@@ -410,8 +413,8 @@ function Submit() {
 
                     {/* 费用明细 */}
                     <View className="flex flex-col space-y-1 ml-2">
-                      {v.fee_items.map((item, fi) => (
-                        <View key={fi} className="flex flex-row justify-between">
+                      {v.fee_items.map((item) => (
+                        <View key={item.id} className="flex flex-row justify-between">
                           <Text className="text-lg text-foreground">
                             {item.field_name === 'other'
                               ? `其他（${item.note}）`
@@ -429,9 +432,9 @@ function Submit() {
                       <View className="mt-3">
                         <Text className="text-lg text-muted-foreground mb-2">📎 凭证图片 {v.receipt_images.length} 张</Text>
                         <View className="flex flex-row flex-wrap gap-2">
-                          {v.receipt_images.map((img, ii) => (
+                          {v.receipt_images.map((img) => (
                             <Image
-                              key={ii}
+                              key={img.path}
                               src={img.path}
                               className="w-16 h-16 rounded-lg"
                               mode="aspectFill"
