@@ -45,6 +45,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
 
     if (normalizedValue.length >= 1) {
       const {data} = await searchVehicles(normalizedValue)
+      console.log('搜索结果:', data.length, data.map((v) => v.plate_number))
       setSearchResults(data.map((v) => v.plate_number).slice(0, 10))
       setShowSearch(true)
     } else {
@@ -220,7 +221,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                   if (searchResults.length > 0) setShowSearch(true)
                 }}
                 onBlur={() => {
-                  setTimeout(() => setShowSearch(false), 150)
+                  setTimeout(() => setShowSearch(false), 300)
                 }}
               />
             </View>
