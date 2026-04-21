@@ -87,10 +87,7 @@ const DashboardPage: React.FC = () => {
                 {loading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
-                  <>
-                    <div className="text-3xl font-bold">{stats?.todayNew || 0}</div>
-                    <p className="mt-2 text-xs text-muted-foreground">较昨日 +8%</p>
-                  </>
+                  <div className="text-3xl font-bold">{stats?.todayNew || 0}</div>
                 )}
               </CardContent>
             </Card>
@@ -105,10 +102,7 @@ const DashboardPage: React.FC = () => {
                 {loading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
-                  <>
-                    <div className="text-3xl font-bold">{stats?.todayPending || 0}</div>
-                    <p className="mt-2 text-xs text-muted-foreground">较昨日 -3%</p>
-                  </>
+                  <div className="text-3xl font-bold">{stats?.todayPending || 0}</div>
                 )}
               </CardContent>
             </Card>
@@ -123,10 +117,7 @@ const DashboardPage: React.FC = () => {
                 {loading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
-                  <>
-                    <div className="text-3xl font-bold text-success">{stats?.todayConfirmed || 0}</div>
-                    <p className="mt-2 text-xs text-muted-foreground">较昨日 +12%</p>
-                  </>
+                  <div className="text-3xl font-bold text-success">{stats?.todayConfirmed || 0}</div>
                 )}
               </CardContent>
             </Card>
@@ -141,12 +132,9 @@ const DashboardPage: React.FC = () => {
                 {loading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
-                  <>
-                    <div className={`text-3xl font-bold ${stats && stats.totalPending > 0 ? 'text-warning' : ''}`}>
-                      {stats?.totalPending || 0}
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">较昨日 +2%</p>
-                  </>
+                  <div className={`text-3xl font-bold ${stats && stats.totalPending > 0 ? 'text-warning' : ''}`}>
+                    {stats?.totalPending || 0}
+                  </div>
                 )}
               </CardContent>
             </Card>

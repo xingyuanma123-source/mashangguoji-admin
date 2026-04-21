@@ -85,14 +85,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     <TooltipProvider>
       <div className="h-screen flex overflow-hidden">
         <aside
-          className={cn("relative h-screen flex flex-col shrink-0 transition-all duration-300 overflow-visible", collapsed ? "w-14" : "w-52")}
+          className={cn("relative h-screen flex flex-col shrink-0 transition-all duration-300 overflow-visible", collapsed ? "w-14" : "w-[9.5rem]")}
           style={{ background: 'linear-gradient(180deg, #0f2a5e 0%, #1a3f8f 60%, #1e4da8 100%)' }}
         >
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              'absolute right-0 top-4 z-30 translate-x-full border-l-0 px-0 transition-all',
+              'absolute right-0 top-1/2 z-30 -translate-y-1/2 translate-x-full border-l-0 px-0 transition-all',
               collapsed
                 ? 'h-10 w-5 rounded-r-full rounded-l-none border border-[#7fb0ff] bg-[#0f2a5e] text-white shadow-[0_4px_10px_rgba(15,42,94,0.3)] hover:bg-[#1a3f8f]'
                 : 'h-9 w-4 rounded-r-full rounded-l-none border border-[#0f2a5e]/40 bg-white text-[#0f2a5e] shadow-[0_3px_8px_rgba(15,42,94,0.18)] hover:bg-[#eef3ff]'

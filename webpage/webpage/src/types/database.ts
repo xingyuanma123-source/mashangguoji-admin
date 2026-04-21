@@ -56,6 +56,7 @@ export interface ExpenseRecord {
   fee_stamp: number;
   note_amount: number;
   note_detail?: string;
+  fee_location_detail?: string;
   total_expense: number;
   commission: number;
   receipt_images?: string[];
@@ -66,6 +67,17 @@ export interface ExpenseRecord {
   created_at: string;
   updated_at: string;
   driver?: Driver;
+}
+
+export interface ExpenseFeeDetail {
+  id: number;
+  expense_record_id: number;
+  fee_field_name: string;
+  detail_location: string;
+  amount: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AdvanceFundRecord {

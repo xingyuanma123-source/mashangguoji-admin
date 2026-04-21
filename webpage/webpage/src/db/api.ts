@@ -6,6 +6,7 @@ import type {
   Vehicle,
   FeeType,
   ExpenseRecord,
+  ExpenseFeeDetail,
   AdvanceFundRecord,
   OperationLog,
   ExpenseRecordWithDriver,
@@ -360,6 +361,46 @@ export async function batchUpdateCommission(ids: number[], commission: number) {
     .in('id', ids);
 
   if (error) throw error;
+}
+
+export async function getExpenseFeeDetailsByRecord(expenseRecordId: number) {
+  const { data, error } = await supabase
+    .from('expense_fee_details')
+    .select('*')
+    .eq('expense_record_id', expenseRecordId)
+    .order('sort_order', { ascending: true })
+    .order('id', { ascending: true });
+
+  if (error) throw error;
+  return Array.isArray(data) ? (data as ExpenseFeeDetail[]) : [];
+}
+
+export async function replaceExpenseFeeDetails(
+  expenseRecordId: number,
+  details: Array<{ fee_field_name: string; detail_location: string; amount: number; sort_order?: number }>
+) {
+  const { error: deleteError } = await supabase
+    .from('expense_fee_details')
+    .delete()
+    .eq('expense_record_id', expenseRecordId);
+
+  if (deleteError) throw deleteError;
+
+  if (details.length === 0) return;
+
+  const rows = details.map((item, index) => ({
+    expense_record_id: expenseRecordId,
+    fee_field_name: item.fee_field_name,
+    detail_location: item.detail_location,
+    amount: item.amount,
+    sort_order: item.sort_order ?? index,
+  }));
+
+  const { error: insertError } = await supabase
+    .from('expense_fee_details')
+    .insert(rows);
+
+  if (insertError) throw insertError;
 }
 
 // ==================== 备用金记录 ====================

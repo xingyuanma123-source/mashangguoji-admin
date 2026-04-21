@@ -127,6 +127,13 @@ const SummaryPage: React.FC = () => {
           driverRecords.filter(r => r.is_overtime).map(r => r.record_date)
         );
 
+        const buildRemarkText = (record: ExpenseRecordWithDriver) => {
+          const otherName = (record.note_detail || '').trim();
+          const locationDetail = (record.fee_location_detail || '').trim();
+          if (otherName && locationDetail) return `${otherName}; ${locationDetail}`;
+          return otherName || locationDetail;
+        };
+
         const wsData: any[][] = [];
 
         wsData.push([`${driver.name} ${startDate} 至 ${endDate} 短驳提成  备用金${totalRecharge}`]);
@@ -134,7 +141,7 @@ const SummaryPage: React.FC = () => {
         wsData.push([
           '日期', '车牌', '司机', '路线', '过磅费', '提柜费', '过夜费', '越南超时费',
           '越南收钥匙', '停车费', '新岗', '打车', '淋水', '解篷布', '高速费', '盖章',
-          '备注', '备注明细', '支出费用', '提成', '图片数量', '加班标记', '日期/客户'
+          '其他费用金额', '备注', '支出费用', '提成', '图片数量', '加班标记', '日期/客户'
         ]);
 
         driverRecords.sort((a, b) => a.record_date.localeCompare(b.record_date));
@@ -157,7 +164,7 @@ const SummaryPage: React.FC = () => {
             record.fee_highway || '',
             record.fee_stamp || '',
             record.note_amount || '',
-            record.note_detail || '',
+            buildRemarkText(record),
             record.total_expense,
             record.commission || '',
             record.receipt_images?.length ? `${record.receipt_images.length}张` : '',
