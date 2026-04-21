@@ -21,8 +21,7 @@ export const customFetch: typeof fetch = async (url: string, options: RequestIni
     url,
     method: method as keyof Taro.request.Method,
     header: headers,
-    data: body,
-    responseType: 'text'
+    data: body ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined
   })
 
   // 全局启停提示

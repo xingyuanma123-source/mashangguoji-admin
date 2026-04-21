@@ -13,6 +13,12 @@ import type {
 
 export type {Driver}
 
+let activeVehiclesCache: Vehicle[] | null = null
+
+function normalizePlateNumber(value: string) {
+  return value.replace(/\s+/g, '').trim().toUpperCase()
+}
+
 function buildExpenseRecordPayload(record: Partial<ExpenseRecord>): Partial<ExpenseRecord> {
   return {
     driver_id: record.driver_id,
@@ -125,55 +131,83 @@ export async function getDriverById(driverId: number) {
 
 // ==================== 车辆相关 ====================
 
-/**
- * 搜索车牌号（模糊匹配）
- */
-export async function searchVehicles(keyword: string) {
-  const normalizedKeyword = keyword.replace(/\s+/g, '').trim()
-
-  if (!normalizedKeyword) {
-    return {data: [], error: null}
+async function getActiveVehicles() {
+  if (activeVehiclesCache) {
+    return {data: activeVehiclesCache, error: null}
   }
 
   const {data, error} = await supabase
     .from('vehicles')
     .select('id, plate_number, vehicle_type, source, is_active, created_at')
-    .ilike('plate_number', `%${normalizedKeyword}%`)
     .eq('is_active', true)
     .order('plate_number')
-    .limit(10)
+    .limit(200)
+
+  if (error) {
+    console.error('获取车辆列表失败:', error)
+    return {data: [], error}
+  }
+
+  activeVehiclesCache = Array.isArray(data) ? (data as Vehicle[]) : []
+  return {data: activeVehiclesCache, error: null}
+}
+
+/**
+ * 搜索车牌号（模糊匹配）
+ */
+export async function searchVehicles(keyword: string) {
+  const normalizedKeyword = normalizePlateNumber(keyword)
+
+  if (!normalizedKeyword) {
+    return {data: [], error: null}
+  }
+
+  const {data, error} = await getActiveVehicles()
 
   if (error) {
     console.error('搜索车辆失败:', error)
     return {data: [], error}
   }
 
-  return {data: Array.isArray(data) ? (data as Vehicle[]) : [], error: null}
+  const matchedVehicles = data
+    .filter((vehicle) => normalizePlateNumber(vehicle.plate_number).includes(normalizedKeyword))
+    .sort((a, b) => {
+      const aPlate = normalizePlateNumber(a.plate_number)
+      const bPlate = normalizePlateNumber(b.plate_number)
+      const aStartsWith = aPlate.startsWith(normalizedKeyword) ? 0 : 1
+      const bStartsWith = bPlate.startsWith(normalizedKeyword) ? 0 : 1
+
+      if (aStartsWith !== bStartsWith) {
+        return aStartsWith - bStartsWith
+      }
+
+      return aPlate.localeCompare(bPlate)
+    })
+    .slice(0, 10)
+
+  return {data: matchedVehicles, error: null}
 }
 
 /**
  * 检查车牌号是否在库中
  */
 export async function checkVehicleExists(plateNumber: string) {
-  const normalizedPlateNumber = plateNumber.trim()
+  const normalizedPlateNumber = normalizePlateNumber(plateNumber)
 
   if (!normalizedPlateNumber) {
     return {exists: false, error: null}
   }
 
-  const {data, error} = await supabase
-    .from('vehicles')
-    .select('id')
-    .eq('plate_number', normalizedPlateNumber)
-    .eq('is_active', true)
-    .maybeSingle()
+  const {data, error} = await getActiveVehicles()
 
   if (error) {
     console.error('检查车牌失败:', error)
     return {exists: false, error}
   }
 
-  return {exists: !!data, error: null}
+  const exists = data.some((vehicle) => normalizePlateNumber(vehicle.plate_number) === normalizedPlateNumber)
+
+  return {exists, error: null}
 }
 
 // ==================== 费用类型相关 ====================
