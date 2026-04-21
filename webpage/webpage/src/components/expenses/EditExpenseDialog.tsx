@@ -13,6 +13,7 @@ import {
   createOperationLog,
   fetchOtherFees,
 } from '@/db/api';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -368,6 +369,30 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
     }
   };
 
+  const handleSaveCommission = async () => {
+    if (!record || !user) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('expense_records')
+        .update({ commission: formData.commission })
+        .eq('id', record.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('提成已保存');
+      onSuccess();
+    } catch (error) {
+      console.error('提成保存失败:', error);
+      toast.error('修改失败，请重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!record) return null;
 
   return (
@@ -584,7 +609,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             关闭
           </Button>
-          <Button onClick={handleSubmit} loading={loading} loadingText="保存中...">
+          <Button onClick={isEditing ? handleSubmit : handleSaveCommission} loading={loading} loadingText="保存中...">
             {isEditing ? '保存' : '保存提成'}
           </Button>
         </DialogFooter>
