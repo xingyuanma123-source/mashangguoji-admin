@@ -4,6 +4,8 @@
   "setting": {
     "compileHotReLoad": true,
     "urlCheck": false,
+    "minified": true,
+    "lazyCodeLoading": "requiredComponents",
     "coverView": false,
     "lazyloadPlaceholderEnable": false,
     "skylineRenderEnable": false,
