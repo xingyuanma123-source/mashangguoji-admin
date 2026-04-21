@@ -127,11 +127,59 @@ const SummaryPage: React.FC = () => {
           driverRecords.filter(r => r.is_overtime).map(r => r.record_date)
         );
 
+        const buildOtherFeeNames = (record: ExpenseRecordWithDriver) => {
+          if (record.other_fees && record.other_fees.length > 0) {
+            return record.other_fees.map((item) => item.name).join('/');
+          }
+
+          const legacyNames = (record.note_detail || '')
+            .split(/[;；]/)
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .map((item) => item.replace('：', ':').split(':')[0]?.trim())
+            .filter(Boolean);
+
+          return legacyNames.join('/');
+        };
+
         const buildRemarkText = (record: ExpenseRecordWithDriver) => {
-          const otherName = (record.note_detail || '').trim();
-          const locationDetail = (record.fee_location_detail || '').trim();
-          if (otherName && locationDetail) return `${otherName}; ${locationDetail}`;
-          return otherName || locationDetail;
+          const remarkParts: string[] = [];
+
+          const locationDetail = (record.fee_location_detail || '')
+            .split(/[;；]/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+
+          if (locationDetail.length > 0) {
+            const groupedLocationDetails = locationDetail.reduce((groups, item) => {
+              const match = item.match(/^(.+?)\((.+?)\):\s*(-?\d+(\.\d+)?)$/);
+              if (!match) return groups;
+              const displayName = match[1].trim();
+              const location = match[2].trim();
+              const amount = match[3].trim();
+              if (!location) return groups;
+              if (!groups[displayName]) groups[displayName] = [];
+              groups[displayName].push(`${location}${amount}`);
+              return groups;
+            }, {} as Record<string, string[]>);
+
+            Object.entries(groupedLocationDetails).forEach(([displayName, entries]) => {
+              if (entries.length > 0) {
+                remarkParts.push(`${displayName}：${entries.join('；')}`);
+              }
+            });
+          }
+
+          if (record.other_fees && record.other_fees.length > 0) {
+            remarkParts.push(`其他费用：${record.other_fees.map((item) => `${item.name}${item.amount}`).join('；')}`);
+          } else {
+            const legacyOther = (record.note_detail || '').trim();
+            if (legacyOther) {
+              remarkParts.push(`其他费用：${legacyOther.replace(/[;；]\s*/g, '；')}`);
+            }
+          }
+
+          return remarkParts.join('；');
         };
 
         const wsData: any[][] = [];
@@ -141,7 +189,7 @@ const SummaryPage: React.FC = () => {
         wsData.push([
           '日期', '车牌', '司机', '路线', '过磅费', '提柜费', '过夜费', '越南超时费',
           '越南收钥匙', '停车费', '新岗', '打车', '淋水', '解篷布', '高速费', '盖章',
-          '其他费用金额', '备注', '支出费用', '提成', '图片数量', '加班标记', '日期/客户'
+          '其他费用', '其他费用金额', '备注', '支出费用', '提成', '图片数量', '加班标记', '日期/客户'
         ]);
 
         driverRecords.sort((a, b) => a.record_date.localeCompare(b.record_date));
@@ -163,6 +211,7 @@ const SummaryPage: React.FC = () => {
             record.fee_tarpaulin || '',
             record.fee_highway || '',
             record.fee_stamp || '',
+            buildOtherFeeNames(record),
             record.note_amount || '',
             buildRemarkText(record),
             record.total_expense,
@@ -175,7 +224,7 @@ const SummaryPage: React.FC = () => {
 
         wsData.push([]);
         wsData.push([
-          '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
           totalExpense,
           totalCommission,
           '',
@@ -187,7 +236,7 @@ const SummaryPage: React.FC = () => {
         wsData.push([]);
         for (const fund of fundRecords) {
           wsData.push([
-            '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+            '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
             `${format(new Date(fund.fund_date), 'M/d')}备用金`,
             fund.amount,
             '', '', '', '', '', ''
@@ -195,7 +244,7 @@ const SummaryPage: React.FC = () => {
         }
 
         wsData.push([
-          '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+          '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
           '余',
           totalRecharge - totalExpense,
           '', '', ''
@@ -206,8 +255,8 @@ const SummaryPage: React.FC = () => {
         ws['!cols'] = [
           { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 8 }, { wch: 8 },
           { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
-          { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 15 },
-          { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 12 }
+          { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 22 }, { wch: 10 },
+          { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }
         ];
 
         XLSX.utils.book_append_sheet(workbook, ws, driver.name);

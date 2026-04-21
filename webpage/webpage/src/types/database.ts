@@ -67,6 +67,7 @@ export interface ExpenseRecord {
   created_at: string;
   updated_at: string;
   driver?: Driver;
+  other_fees?: OtherFeeItem[];
 }
 
 export interface ExpenseFeeDetail {
@@ -78,6 +79,14 @@ export interface ExpenseFeeDetail {
   sort_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface OtherFeeItem {
+  id?: number;
+  expense_record_id?: number;
+  name: string;
+  amount: number;
+  sort_order?: number;
 }
 
 export interface AdvanceFundRecord {

@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { ExpenseRecordWithDriver, FeeType } from '@/types/database';
+import type { ExpenseRecordWithDriver, FeeType, OtherFeeItem } from '@/types/database';
 import {
   getAllFeeTypes,
   getAllVehicles,
   updateExpenseRecord,
   createOperationLog,
+  fetchOtherFees,
 } from '@/db/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -45,6 +46,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
   const [vehicles, setVehicles] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [feeDetails, setFeeDetails] = useState<Record<string, string>>({});
+  const [otherFees, setOtherFees] = useState<OtherFeeItem[]>([]);
   const dialogContentRef = React.useRef<HTMLDivElement | null>(null);
   
   const [formData, setFormData] = useState({
@@ -67,6 +69,12 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
     fee_location_detail: '',
     commission: 0,
     is_overtime: false,
+  });
+
+  const createEmptyOtherFee = (): OtherFeeItem => ({
+    name: '',
+    amount: 0,
+    sort_order: otherFees.length,
   });
 
   const splitLegacyMixedNoteDetail = (raw: string, names: string[]) => {
@@ -108,6 +116,25 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
     } catch {
       return null;
     }
+  };
+
+  const parseLegacyOtherFees = (raw?: string | null) => {
+    if (!raw) return [];
+    return raw
+      .split(/[;；]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item, index) => {
+        const normalized = item.replace('：', ':');
+        const match = normalized.match(/^(.+?):\s*(-?\d+(\.\d+)?)$/);
+        if (!match) return null;
+        return {
+          name: match[1].trim(),
+          amount: Number(match[2]) || 0,
+          sort_order: index,
+        } as OtherFeeItem;
+      })
+      .filter((item): item is OtherFeeItem => !!item && !!item.name);
   };
 
   const parseFeeLocationDetailToMap = (raw: string, types: FeeType[]) => {
@@ -168,7 +195,6 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
 
   useEffect(() => {
     if (open && record) {
-      let otherName = record.note_detail || '';
       let feeLocationDetail = record.fee_location_detail || '';
       setFormData({
         plate_number: record.plate_number,
@@ -186,12 +212,13 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
         fee_highway: Number(record.fee_highway),
         fee_stamp: Number(record.fee_stamp),
         note_amount: Number(record.note_amount),
-        note_detail: otherName,
+        note_detail: record.note_detail || '',
         fee_location_detail: feeLocationDetail,
         commission: Number(record.commission),
         is_overtime: record.is_overtime,
       });
       setFeeDetails({});
+      setOtherFees([]);
       setIsEditing(false);
       loadFeeTypes();
       loadVehicles();
@@ -221,6 +248,29 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
       note_detail: otherName,
       fee_location_detail: feeLocationDetail,
     }));
+
+    const loadOtherFeesData = async () => {
+      try {
+        const rows = await fetchOtherFees(record.id);
+        if (rows.length > 0) {
+          setOtherFees(rows);
+          return;
+        }
+      } catch (error) {
+        console.error('加载其他费用失败:', error);
+      }
+
+      const fallbackOtherFees = parseLegacyOtherFees(otherName);
+      setOtherFees(
+        fallbackOtherFees.length > 0
+          ? fallbackOtherFees
+          : Number(record.note_amount) > 0
+            ? [{ name: otherName, amount: Number(record.note_amount), sort_order: 0 }]
+            : []
+      );
+    };
+
+    loadOtherFeesData();
 
     if (metaPayload?.feeDetails && Object.keys(metaPayload.feeDetails).length > 0 && !feeLocationDetail) {
       setFeeDetails(metaPayload.feeDetails);
@@ -254,6 +304,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
   };
 
   const calculateTotalExpense = () => {
+    const otherFeeTotal = otherFees.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     return (
       formData.fee_weighing +
       formData.fee_container +
@@ -267,7 +318,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
       formData.fee_tarpaulin +
       formData.fee_highway +
       formData.fee_stamp +
-      formData.note_amount
+      otherFeeTotal
     );
   };
 
@@ -276,12 +327,22 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
 
     setLoading(true);
     try {
+      const normalizedOtherFees = otherFees
+        .map((item, index) => ({
+          ...item,
+          name: item.name?.trim() || '',
+          amount: Number(item.amount) || 0,
+          sort_order: index,
+        }))
+        .filter((item) => item.name && item.amount > 0);
       const totalExpense = calculateTotalExpense();
       const nextFeeLocationDetail = buildFeeLocationDetail(feeTypes);
       await updateExpenseRecord(record.id, {
         ...formData,
-        note_detail: formData.note_detail.trim(),
+        note_amount: normalizedOtherFees.reduce((sum, item) => sum + item.amount, 0),
+        note_detail: normalizedOtherFees.map((item) => `${item.name}:${item.amount}`).join('; '),
         fee_location_detail: nextFeeLocationDetail,
+        other_fees: normalizedOtherFees,
         total_expense: totalExpense,
       });
 
@@ -391,25 +452,66 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>其他费用名称</Label>
-              <Input
-                value={formData.note_detail}
-                disabled={!isEditing}
-                onChange={(e) => setFormData({ ...formData, note_detail: e.target.value })}
-              />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">其他费用</Label>
+              <div className="text-sm text-muted-foreground">
+                合计 ¥{otherFees.reduce((sum, item) => sum + (Number(item.amount) || 0), 0).toFixed(2)}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>其他费用金额</Label>
-              <Input
-                type="number"
-                step="0.01"
-                disabled={!isEditing}
-                value={formData.note_amount}
-                onChange={(e) => setFormData({ ...formData, note_amount: Number(e.target.value) || 0 })}
-              />
-            </div>
+            {otherFees.length === 0 && (
+              <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                暂无其他费用
+              </div>
+            )}
+            {otherFees.map((item, index) => (
+              <div key={`${item.id || 'new'}_${index}`} className="grid grid-cols-[minmax(0,1fr)_140px_auto] gap-3">
+                <Input
+                  value={item.name}
+                  disabled={!isEditing}
+                  placeholder="其他费用名称"
+                  onChange={(e) =>
+                    setOtherFees((prev) =>
+                      prev.map((fee, feeIndex) =>
+                        feeIndex === index ? { ...fee, name: e.target.value } : fee
+                      )
+                    )
+                  }
+                />
+                <Input
+                  type="number"
+                  step="0.01"
+                  disabled={!isEditing}
+                  value={item.amount}
+                  placeholder="金额"
+                  onChange={(e) =>
+                    setOtherFees((prev) =>
+                      prev.map((fee, feeIndex) =>
+                        feeIndex === index ? { ...fee, amount: Number(e.target.value) || 0 } : fee
+                      )
+                    )
+                  }
+                />
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOtherFees((prev) => prev.filter((_, feeIndex) => feeIndex !== index))}
+                  >
+                    删除
+                  </Button>
+                )}
+              </div>
+            ))}
+            {isEditing && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOtherFees((prev) => [...prev, { ...createEmptyOtherFee(), sort_order: prev.length }])}
+              >
+                添加其他费用
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">
