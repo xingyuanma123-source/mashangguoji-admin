@@ -129,13 +129,19 @@ export async function getDriverById(driverId: number) {
  * 搜索车牌号（模糊匹配）
  */
 export async function searchVehicles(keyword: string) {
+  const normalizedKeyword = keyword.replace(/\s+/g, '').trim()
+
+  if (!normalizedKeyword) {
+    return {data: [], error: null}
+  }
+
   const {data, error} = await supabase
     .from('vehicles')
-    .select('*')
-    .ilike('plate_number', `%${keyword}%`)
+    .select('id, plate_number, vehicle_type, source, is_active, created_at')
+    .ilike('plate_number', `%${normalizedKeyword}%`)
     .eq('is_active', true)
     .order('plate_number')
-    .limit(20)
+    .limit(10)
 
   if (error) {
     console.error('搜索车辆失败:', error)
@@ -149,10 +155,16 @@ export async function searchVehicles(keyword: string) {
  * 检查车牌号是否在库中
  */
 export async function checkVehicleExists(plateNumber: string) {
+  const normalizedPlateNumber = plateNumber.trim()
+
+  if (!normalizedPlateNumber) {
+    return {exists: false, error: null}
+  }
+
   const {data, error} = await supabase
     .from('vehicles')
     .select('id')
-    .eq('plate_number', plateNumber)
+    .eq('plate_number', normalizedPlateNumber)
     .eq('is_active', true)
     .maybeSingle()
 
@@ -304,15 +316,22 @@ export async function fetchOtherFees(recordId: number) {
  * 删除报账记录（仅限 pending 状态）
  */
 export async function deleteExpenseRecord(id: number) {
-  const {error} = await supabase
+  const {data, error} = await supabase
     .from('expense_records')
     .delete()
     .eq('id', id)
     .eq('status', 'pending')
+    .select('id')
 
   if (error) {
     console.error('删除报账记录失败:', error)
     return {error}
+  }
+
+  if (!data || data.length === 0) {
+    const deleteError = new Error('未找到可删除的报账记录')
+    console.error('删除报账记录失败:', deleteError)
+    return {error: deleteError}
   }
 
   return {error: null}

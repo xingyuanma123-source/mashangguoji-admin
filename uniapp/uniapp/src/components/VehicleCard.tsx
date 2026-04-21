@@ -21,11 +21,19 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
   const [plateValid, setPlateValid] = useState<'valid' | 'invalid' | 'unknown'>('unknown')
   const [collapsed, setCollapsed] = useState(false)
 
+  const normalizePlateKeyword = (value: string) => value.replace(/\s+/g, '').trim().toUpperCase()
+
   useEffect(() => {
-    if (card.plate_number) {
+    setPlateSearch(card.plate_number || '')
+  }, [card.plate_number])
+
+  useEffect(() => {
+    if (card.plate_number.trim()) {
       checkVehicleExists(card.plate_number).then(({exists}) => {
         setPlateValid(exists ? 'valid' : 'invalid')
       })
+    } else {
+      setPlateValid('unknown')
     }
   }, [card.plate_number])
 
@@ -33,9 +41,11 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
     setPlateSearch(value)
     onChange({...card, plate_number: value})
 
-    if (value.length >= 2) {
-      const {data} = await searchVehicles(value)
-      setSearchResults(data.map((v) => v.plate_number))
+    const normalizedValue = normalizePlateKeyword(value)
+
+    if (normalizedValue.length >= 1) {
+      const {data} = await searchVehicles(normalizedValue)
+      setSearchResults(data.map((v) => v.plate_number).slice(0, 10))
       setShowSearch(true)
     } else {
       setSearchResults([])
@@ -47,6 +57,34 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
     setPlateSearch(plate)
     onChange({...card, plate_number: plate})
     setShowSearch(false)
+    setSearchResults([])
+  }
+
+  const renderHighlightedPlate = (plate: string) => {
+    const normalizedKeyword = normalizePlateKeyword(plateSearch)
+
+    if (!normalizedKeyword) {
+      return <Text className="text-xl font-semibold text-foreground">{plate}</Text>
+    }
+
+    const normalizedPlate = plate.toUpperCase()
+    const matchIndex = normalizedPlate.indexOf(normalizedKeyword)
+
+    if (matchIndex === -1) {
+      return <Text className="text-xl font-semibold text-foreground">{plate}</Text>
+    }
+
+    const before = plate.slice(0, matchIndex)
+    const match = plate.slice(matchIndex, matchIndex + normalizedKeyword.length)
+    const after = plate.slice(matchIndex + normalizedKeyword.length)
+
+    return (
+      <Text className="text-xl font-semibold text-foreground">
+        <Text>{before}</Text>
+        <Text className="text-primary">{match}</Text>
+        <Text>{after}</Text>
+      </Text>
+    )
   }
 
   const addFeeItem = () => {
@@ -174,12 +212,15 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
             <Text className="text-base text-muted-foreground mb-2 block">车牌号</Text>
             <View className={`rounded-xl border-2 ${borderColor} bg-background px-3 py-3`}>
               <Input
-                className="w-full text-lg text-foreground"
+                className="w-full text-xl text-foreground"
                 placeholder="输入车牌号搜索"
-                value={plateSearch || card.plate_number}
+                value={plateSearch}
                 onInput={(e) => handlePlateSearch(e.detail.value)}
                 onFocus={() => {
                   if (searchResults.length > 0) setShowSearch(true)
+                }}
+                onBlur={() => {
+                  setTimeout(() => setShowSearch(false), 150)
                 }}
               />
             </View>
@@ -189,8 +230,11 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
             {showSearch && searchResults.length > 0 && (
               <View className="mt-2 rounded-xl border border-border bg-card overflow-hidden">
                 {searchResults.map((plate) => (
-                  <View key={plate} className="px-3 py-2 border-b border-border" onClick={() => selectPlate(plate)}>
-                    <Text className="text-base text-foreground">{plate}</Text>
+                  <View
+                    key={plate}
+                    className="min-h-12 px-4 py-3 border-b border-border flex items-center"
+                    onClick={() => selectPlate(plate)}>
+                    {renderHighlightedPlate(plate)}
                   </View>
                 ))}
               </View>

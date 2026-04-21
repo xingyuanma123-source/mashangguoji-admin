@@ -93,8 +93,8 @@ function Records() {
         if (error) {
           Taro.showToast({title: '删除失败，请重试', icon: 'none'})
         } else {
+          await loadData()
           Taro.showToast({title: '已删除', icon: 'success'})
-          loadData()
         }
       }
     })
