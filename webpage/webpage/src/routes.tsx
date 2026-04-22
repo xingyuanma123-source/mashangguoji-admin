@@ -11,10 +11,12 @@ const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
 const SummaryPage = lazy(() => import('@/pages/SummaryPage'));
 const DriversPage = lazy(() => import('@/pages/DriversPage'));
 const VehiclesPage = lazy(() => import('@/pages/VehiclesPage'));
+const VehicleTrackingPage = lazy(() => import('@/pages/VehicleTracking'));
 const AdvanceFundsPage = lazy(() => import('@/pages/AdvanceFundsPage'));
 const FeeTypesPage = lazy(() => import('@/pages/FeeTypesPage'));
 const StaffPage = lazy(() => import('@/pages/StaffPage'));
 const LogsPage = lazy(() => import('@/pages/LogsPage'));
+const LegalPage = lazy(() => import('@/pages/Legal'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const routes: RouteConfig[] = [
@@ -43,6 +45,10 @@ const routes: RouteConfig[] = [
     component: VehiclesPage,
   },
   {
+    path: '/vehicle-tracking',
+    component: VehicleTrackingPage,
+  },
+  {
     path: '/advance-funds',
     component: AdvanceFundsPage,
   },
@@ -57,6 +63,10 @@ const routes: RouteConfig[] = [
   {
     path: '/logs',
     component: LogsPage,
+  },
+  {
+    path: '/legal',
+    component: LegalPage,
   },
   {
     path: '/404',

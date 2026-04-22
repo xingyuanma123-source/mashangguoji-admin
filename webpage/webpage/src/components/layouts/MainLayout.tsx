@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard, FileText, Table, Users, Truck,
   Wallet, List, UserCog, ClipboardList, LogOut,
-  PanelLeftClose, PanelLeft,
+  PanelLeftClose, PanelLeft, Map, FileSpreadsheet,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -40,10 +40,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     { path: '/summary', label: '总表', icon: Table },
     { path: '/drivers', label: '司机管理', icon: Users },
     { path: '/vehicles', label: '车辆管理', icon: Truck },
+    { path: '/vehicle-tracking', label: '车辆定位', icon: Map },
     { path: '/advance-funds', label: '备用金', icon: Wallet },
     { path: '/fee-types', label: '费用类型管理', icon: List },
     ...(isAdmin ? [{ path: '/staff', label: '客服账号管理', icon: UserCog }] : []),
     { path: '/logs', label: '操作日志', icon: ClipboardList },
+    { path: '/legal', label: '合同法务', icon: FileSpreadsheet },
   ];
 
   const NavItem = ({ path, label, icon: Icon }: { path: string; label: string; icon: any }) => {
