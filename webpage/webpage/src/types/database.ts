@@ -111,6 +111,15 @@ export interface OperationLog {
   created_at: string;
 }
 
+export interface LegalReview {
+  id: number;
+  file_name: string;
+  review_result: string;
+  risk_level: '高' | '中' | '低' | null;
+  created_by?: string | null;
+  created_at: string;
+}
+
 // 扩展类型，用于前端显示
 export interface ExpenseRecordWithDriver extends ExpenseRecord {
   driver: Driver;

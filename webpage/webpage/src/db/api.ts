@@ -10,6 +10,7 @@ import type {
   OtherFeeItem,
   AdvanceFundRecord,
   OperationLog,
+  LegalReview,
   ExpenseRecordWithDriver,
   AdvanceFundRecordWithDriver,
 } from '@/types/database';
@@ -595,6 +596,48 @@ export async function getOperationLogs(filters?: {
 
   if (error) throw error;
   return Array.isArray(data) ? data : [];
+}
+
+// ==================== 合同法务审查 ====================
+
+export async function createLegalReview(review: {
+  file_name: string;
+  review_result: string;
+  risk_level?: LegalReview['risk_level'];
+  created_by?: string | null;
+}) {
+  const { data, error } = await supabase
+    .from('legal_reviews')
+    .insert({
+      file_name: review.file_name,
+      review_result: review.review_result,
+      risk_level: review.risk_level ?? null,
+      created_by: review.created_by ?? null,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  invalidateCache('legal_reviews:');
+  return data as LegalReview;
+}
+
+export async function getRecentLegalReviews(limit = 10) {
+  const cacheKey = `legal_reviews:recent:${limit}`;
+  const cached = getCached<LegalReview[]>(cacheKey);
+  if (cached) return cached;
+
+  const { data, error } = await supabase
+    .from('legal_reviews')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const result = Array.isArray(data) ? (data as LegalReview[]) : [];
+  setCached(cacheKey, result);
+  return result;
 }
 
 // ==================== 统计查询 ====================

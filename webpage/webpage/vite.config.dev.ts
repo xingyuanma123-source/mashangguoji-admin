@@ -17,6 +17,17 @@ const viteVersionInfo = {
 
 export default defineConfig({
   ...userConfig,
+  server: {
+    ...(userConfig.server || {}),
+    proxy: {
+      ...(userConfig.server?.proxy || {}),
+      '/api/minimax': {
+        target: 'https://api.minimaxi.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/minimax/, '/v1'),
+      },
+    },
+  },
   define: {
     __VITE_INFO__: JSON.stringify(viteVersionInfo),
     ...(userConfig.define || {})

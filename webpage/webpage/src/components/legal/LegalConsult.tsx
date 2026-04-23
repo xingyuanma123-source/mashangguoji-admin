@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { LEGAL_CONSULT_SYSTEM_PROMPT } from '@/lib/legalPrompts';
-import { chatWithMiniMax, hasMiniMaxApiKey, type MiniMaxMessage } from '@/lib/minimax';
+import { chatWithMiniMaxStream, hasMiniMaxApiKey, type MiniMaxMessage } from '@/lib/minimax';
 
 type ChatMessage = MiniMaxMessage & {
   id: string;
@@ -48,27 +48,43 @@ const LegalConsult = () => {
     };
 
     const nextMessages = [...messages, userMessage];
+    const assistantMessageId = `${Date.now()}-assistant`;
+    const streamingAssistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+    };
 
-    setMessages(nextMessages);
+    setMessages([...nextMessages, streamingAssistantMessage]);
     setInput('');
     setError('');
     setLoading(true);
 
     try {
-      const response = await chatWithMiniMax([
+      const response = await chatWithMiniMaxStream([
         { role: 'system', content: LEGAL_CONSULT_SYSTEM_PROMPT },
         ...nextMessages.map(({ role, content }) => ({ role, content })),
-      ]);
+      ], (chunk) => {
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === assistantMessageId
+              ? { ...message, content: message.content + chunk }
+              : message
+          )
+        );
+      });
 
-      const assistantMessage: ChatMessage = {
-        id: `${Date.now()}-assistant`,
-        role: 'assistant',
-        content: response || 'MiniMax 已返回，但内容为空。建议补充更多事实后重试。',
-      };
-
-      setMessages((current) => [...current, assistantMessage]);
+      const finalContent = response || 'MiniMax 已返回，但内容为空。建议补充更多事实后重试。';
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantMessageId
+            ? { ...message, content: finalContent }
+            : message
+        )
+      );
     } catch (chatError) {
       const message = chatError instanceof Error ? chatError.message : '法律咨询失败，请稍后重试。';
+      setMessages((current) => current.filter((item) => item.id !== assistantMessageId));
       setError(message);
       toast.error(message);
     } finally {
@@ -127,13 +143,6 @@ const LegalConsult = () => {
                 })
               )}
 
-              {loading ? (
-                <div className="flex justify-start">
-                  <div className="max-w-[85%] rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-                    正在整理风险判断和操作建议...
-                  </div>
-                </div>
-              ) : null}
             </div>
           </ScrollArea>
 
