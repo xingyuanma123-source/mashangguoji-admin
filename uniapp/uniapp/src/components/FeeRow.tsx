@@ -68,6 +68,7 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
 
         {feeItem.field_name && (
           <View className="rounded-xl border border-border bg-background px-3 py-3">
+            <Text className="mb-2 block text-sm text-muted-foreground">地点/备注（选填）</Text>
             <Input
               className="w-full text-base text-foreground"
               placeholder="如：北投、桂福"

@@ -92,7 +92,7 @@ export interface FeeItem {
   field_name: string
   display_name: string
   amount: number
-  note?: string // 仅当 field_name 为 'other' 时使用
+  note?: string // 普通费用可记录地点，其他费用可记录名称/备注
 }
 
 // 车辆卡片数据（用于前端表单）
