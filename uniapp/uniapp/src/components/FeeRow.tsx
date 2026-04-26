@@ -1,5 +1,5 @@
 // 费用行组件
-import {Input, Text, View} from '@tarojs/components'
+import {Input, ScrollView, Text, View} from '@tarojs/components'
 import {useState} from 'react'
 import type {FeeItem, FeeType} from '@/db/types'
 
@@ -86,7 +86,10 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
               <View className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
             </View>
             <Text className="mb-4 block text-center text-xl font-semibold text-foreground">请选择费用类型</Text>
-            <View className="flex flex-col overflow-hidden rounded-2xl border border-border bg-background">
+            <ScrollView
+              scrollY
+              className="flex flex-col overflow-hidden rounded-2xl border border-border bg-background"
+              style="max-height: 55vh">
               {feeTypes.map((type) => {
                 const isActive = type.field_name === feeItem.field_name
                 return (
@@ -107,7 +110,7 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
                   </View>
                 )
               })}
-            </View>
+            </ScrollView>
             <View
               className="mt-3 flex items-center justify-center rounded-2xl bg-muted py-4"
               onClick={() => setSelectorOpen(false)}>
