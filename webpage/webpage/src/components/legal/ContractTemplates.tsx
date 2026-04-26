@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTranslation } from 'react-i18next';
 
 interface ContractTemplateItem {
   key: string;
@@ -121,6 +122,7 @@ const CONTRACT_TEMPLATES: ContractTemplateItem[] = [
 ];
 
 const ContractTemplates = () => {
+  const { t } = useTranslation();
   const [activeTemplateKey, setActiveTemplateKey] = useState(CONTRACT_TEMPLATES[0]?.key ?? '');
 
   const activeTemplate = useMemo(
@@ -135,10 +137,10 @@ const ContractTemplates = () => {
 
     try {
       await navigator.clipboard.writeText(activeTemplate.content);
-      toast.success('模板内容已复制');
+      toast.success(t('legal.templateCopied'));
     } catch (error) {
       console.error('复制模板失败:', error);
-      toast.error('复制失败，请手动选择文本');
+      toast.error(t('legal.copyFailed'));
     }
   };
 
@@ -146,8 +148,8 @@ const ContractTemplates = () => {
     <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
       <Card className="border-primary/10 shadow-sm">
         <CardHeader>
-          <CardTitle>模板列表</CardTitle>
-          <CardDescription>模板先以内置内容提供，便于客服或法务快速复用和修改。</CardDescription>
+          <CardTitle>{t('legal.templateList')}</CardTitle>
+          <CardDescription>{t('legal.templateListDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {CONTRACT_TEMPLATES.map((template) => (
@@ -169,12 +171,12 @@ const ContractTemplates = () => {
         <CardHeader className="border-b bg-muted/20">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <CardTitle>{activeTemplate?.title ?? '合同模板'}</CardTitle>
-              <CardDescription>模板内容支持滚动查看和一键复制，可按业务场景继续细化。</CardDescription>
+              <CardTitle>{activeTemplate?.title ?? t('legal.contractTemplates')}</CardTitle>
+              <CardDescription>{t('legal.templateDescription')}</CardDescription>
             </div>
             <Button variant="outline" onClick={handleCopy} disabled={!activeTemplate}>
               <Copy className="h-4 w-4" />
-              复制模板
+              {t('legal.copyTemplate')}
             </Button>
           </div>
         </CardHeader>
@@ -187,7 +189,7 @@ const ContractTemplates = () => {
             </ScrollArea>
           ) : (
             <div className="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground">
-              暂无可用模板
+              {t('legal.noTemplates')}
             </div>
           )}
         </CardContent>

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import IntersectObserver from '@/components/common/IntersectObserver';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 import routes from './routes';
 
@@ -23,6 +24,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const AppRoutes: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <Routes>
       {routes.map((route, index) => {
@@ -33,7 +36,7 @@ const AppRoutes: React.FC = () => {
             path={route.path}
             element={
               <ProtectedRoute>
-                <Suspense fallback={<div className="p-6 text-muted-foreground">页面加载中...</div>}>
+                <Suspense fallback={<div className="p-6 text-muted-foreground">{t('common.loading')}</div>}>
                   <Component />
                 </Suspense>
               </ProtectedRoute>

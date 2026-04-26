@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 declare global {
   interface Window {
@@ -85,14 +86,14 @@ const parseNumber = (value: number | string | null | undefined) => {
   return null;
 };
 
-const formatRelativeTime = (value: string | null) => {
+const formatRelativeTime = (value: string | null, t: (key: string) => string) => {
   if (!value) {
-    return '暂无上报';
+    return t('tracking.noReport');
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return '时间异常';
+    return t('tracking.invalidTime');
   }
 
   return formatDistanceToNow(date, {
@@ -101,9 +102,9 @@ const formatRelativeTime = (value: string | null) => {
   });
 };
 
-const formatGpsTime = (value: string | null) => {
+const formatGpsTime = (value: string | null, t: (key: string) => string) => {
   if (!value) {
-    return '暂无';
+    return t('tracking.none');
   }
 
   const date = new Date(value);
@@ -114,7 +115,7 @@ const formatGpsTime = (value: string | null) => {
   return format(date, 'yyyy-MM-dd HH:mm:ss');
 };
 
-const buildInfoContent = (vehicle: VehicleTrackingItem) => {
+const buildInfoContent = (vehicle: VehicleTrackingItem, t: (key: string, options?: Record<string, unknown>) => string) => {
   const speed = vehicle.speed ?? 0;
   const longitude = vehicle.longitude?.toFixed(6) ?? '-';
   const latitude = vehicle.latitude?.toFixed(6) ?? '-';
@@ -122,14 +123,15 @@ const buildInfoContent = (vehicle: VehicleTrackingItem) => {
   return `
     <div style="min-width:220px;padding:4px 2px;color:#0f172a;">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px;">${vehicle.plateNumber}</div>
-      <div style="font-size:13px;line-height:1.8;">当前速度：${speed} km/h</div>
-      <div style="font-size:13px;line-height:1.8;">GPS时间：${formatGpsTime(vehicle.gpsTime)}</div>
-      <div style="font-size:13px;line-height:1.8;">经纬度：${longitude}, ${latitude}</div>
+      <div style="font-size:13px;line-height:1.8;">${t('tracking.speed', { speed })}</div>
+      <div style="font-size:13px;line-height:1.8;">${t('tracking.gpsTime', { time: formatGpsTime(vehicle.gpsTime, t) })}</div>
+      <div style="font-size:13px;line-height:1.8;">${t('tracking.lngLat', { lng: longitude, lat: latitude })}</div>
     </div>
   `;
 };
 
 const VehicleTracking: React.FC = () => {
+  const { t } = useTranslation();
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<any>(null);
   const markerRef = React.useRef<any>(null);
@@ -185,9 +187,9 @@ const VehicleTracking: React.FC = () => {
     }
 
     infoWindowRef.current.setPosition(position);
-    infoWindowRef.current.setContent(buildInfoContent(vehicle));
+    infoWindowRef.current.setContent(buildInfoContent(vehicle, t));
     infoWindowRef.current.open();
-  }, []);
+  }, [t]);
 
   const initializeMap = React.useCallback(() => {
     const TMap = window.TMap;
@@ -347,12 +349,12 @@ const VehicleTracking: React.FC = () => {
       });
     } catch (error) {
       console.error('加载车辆定位数据失败:', error);
-      toast.error('加载车辆定位数据失败');
+      toast.error(t('tracking.loadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [fetchVehicleTrackingData, openVehicleInfo, updateMarkerLayer]);
+  }, [fetchVehicleTrackingData, openVehicleInfo, t, updateMarkerLayer]);
 
   React.useEffect(() => {
     initializeMap();
@@ -376,7 +378,7 @@ const VehicleTracking: React.FC = () => {
   const handleVehicleSelect = (vehicle: VehicleTrackingItem) => {
     setSelectedVehicleId(vehicle.id);
     if (!vehicle.hasLocation) {
-      toast.error('该车辆暂无可用定位');
+      toast.error(t('tracking.noAvailableLocation'));
       return;
     }
 
@@ -392,19 +394,19 @@ const VehicleTracking: React.FC = () => {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold border-b pb-4 mb-3">车辆定位</h1>
-            <p className="text-muted-foreground">查看车辆最新 GPS 上报位置，地图中心默认定位到广西南宁。</p>
+            <h1 className="text-3xl font-bold border-b pb-4 mb-3">{t('tracking.title')}</h1>
+            <p className="text-muted-foreground">{t('tracking.subtitle')}</p>
           </div>
           <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm">
             <div className="text-right">
-              <div className="text-xs text-muted-foreground">最后刷新时间</div>
+              <div className="text-xs text-muted-foreground">{t('tracking.lastRefresh')}</div>
               <div className="text-sm font-medium">
-                {lastRefreshTime ? format(lastRefreshTime, 'yyyy-MM-dd HH:mm:ss') : '尚未刷新'}
+                {lastRefreshTime ? format(lastRefreshTime, 'yyyy-MM-dd HH:mm:ss') : t('tracking.notRefreshed')}
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => loadData(true)} disabled={refreshing}>
               <RefreshCw className={cn('mr-2 h-4 w-4', refreshing && 'animate-spin')} />
-              刷新
+              {t('common.refresh')}
             </Button>
           </div>
         </div>
@@ -417,7 +419,7 @@ const VehicleTracking: React.FC = () => {
                 <Input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="搜索车牌号"
+                  placeholder={t('tracking.searchPlate')}
                   className="pl-9"
                 />
               </div>
@@ -425,9 +427,9 @@ const VehicleTracking: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto">
               {loading ? (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">加载定位数据中...</div>
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t('tracking.loading')}</div>
               ) : filteredVehicles.length === 0 ? (
-                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">没有匹配的车辆</div>
+                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">{t('tracking.noMatches')}</div>
               ) : (
                 <div className="divide-y">
                   {filteredVehicles.map((vehicle) => (
@@ -457,15 +459,15 @@ const VehicleTracking: React.FC = () => {
                                 vehicle.isOnline ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600'
                               )}
                             >
-                              {vehicle.isOnline ? '在线' : '离线'}
+                              {vehicle.isOnline ? t('common.online') : t('common.offline')}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="shrink-0 border-transparent bg-slate-100 text-[11px] text-slate-500">
-                              无定位
+                              {t('tracking.noLocation')}
                             </Badge>
                           )}
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">{formatRelativeTime(vehicle.gpsTime)}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{formatRelativeTime(vehicle.gpsTime, t)}</div>
                       </div>
                     </button>
                   ))}
@@ -481,16 +483,16 @@ const VehicleTracking: React.FC = () => {
               <div className="absolute inset-0 flex items-center justify-center bg-slate-100/90">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <MapIcon className="h-4 w-4" />
-                  腾讯地图加载中...
+                  {t('tracking.mapLoading')}
                 </div>
               </div>
             )}
 
             <div className="pointer-events-none absolute left-4 top-4 flex gap-2">
-              <div className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm">中心点：广西南宁</div>
+              <div className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm">{t('tracking.center')}</div>
               {selectedVehicle && (
                 <div className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm">
-                  当前选中：{selectedVehicle.plateNumber}
+                  {t('tracking.selected', { plate: selectedVehicle.plateNumber })}
                 </div>
               )}
             </div>
@@ -498,15 +500,15 @@ const VehicleTracking: React.FC = () => {
             <div className="pointer-events-none absolute bottom-4 left-4 flex items-center gap-3 rounded-xl bg-white/95 px-4 py-3 text-xs text-slate-600 shadow-sm">
               <div className="flex items-center gap-2">
                 <img src={ONLINE_MARKER} alt="" className="h-6 w-6" />
-                <span>30分钟内有上报</span>
+                <span>{t('tracking.within30')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <img src={OFFLINE_MARKER} alt="" className="h-6 w-6" />
-                <span>超过30分钟未上报</span>
+                <span>{t('tracking.over30')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Truck className="h-4 w-4" />
-                <span>仅展示最新定位</span>
+                <span>{t('tracking.latestOnly')}</span>
               </div>
             </div>
           </Card>

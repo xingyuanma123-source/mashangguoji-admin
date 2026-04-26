@@ -14,7 +14,7 @@ function ensurePdfWorker(globalWorkerOptions: { workerSrc: string }) {
     return;
   }
 
-  globalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).toString();
+  globalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.6.205/pdf.worker.min.mjs';
   pdfWorkerConfigured = true;
 }
 

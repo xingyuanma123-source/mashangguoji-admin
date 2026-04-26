@@ -13,8 +13,10 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { useTranslation } from 'react-i18next';
 
 const SummaryPage: React.FC = () => {
+  const { t } = useTranslation();
   const [records, setRecords] = useState<ExpenseRecordWithDriver[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ const SummaryPage: React.FC = () => {
       setDrivers(driverList);
     } catch (error) {
       console.error('加载司机列表失败:', error);
-      toast.error('加载司机列表失败');
+      toast.error(t('toast.loadDriversFailed'));
     }
   };
 
@@ -80,7 +82,7 @@ const SummaryPage: React.FC = () => {
       setRecords(data);
     } catch (error) {
       console.error('加载总表数据失败:', error);
-      toast.error('加载总表数据失败');
+      toast.error(t('toast.loadDataFailed'));
     } finally {
       setLoading(false);
     }
@@ -96,7 +98,7 @@ const SummaryPage: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      toast.info('正在生成Excel文件...');
+      toast.info(t('toast.exportingExcel'));
 
       const workbook = XLSX.utils.book_new();
 
@@ -263,17 +265,17 @@ const SummaryPage: React.FC = () => {
       }
 
       XLSX.writeFile(workbook, `${startDate}_${endDate}_司机备用金.xlsx`);
-      toast.success('导出成功');
+      toast.success(t('toast.exportSuccess'));
     } catch (error) {
       console.error('导出失败:', error);
-      toast.error('导出失败，请重试');
+      toast.error(t('toast.exportFailed'));
     }
   };
 
   const handleExportImages = async () => {
     try {
       setExportingImages(true);
-      toast.info('正在下载图片，请稍候...');
+      toast.info(t('toast.downloadingImages'));
 
       const exportDrivers = driverId
         ? drivers.filter(d => d.id === Number(driverId))
@@ -296,7 +298,7 @@ const SummaryPage: React.FC = () => {
       }
 
       if (allRecordsWithImages.length === 0) {
-        toast.error('没有找到任何图片');
+        toast.error(t('toast.noImages'));
         return;
       }
 
@@ -312,7 +314,7 @@ const SummaryPage: React.FC = () => {
           const url = record.receipt_images![i];
           try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error('下载失败');
+            if (!response.ok) throw new Error('download failed');
             const blob = await response.blob();
             const ext = url.split('.').pop()?.split('?')[0] || 'jpg';
             const fileName = `${plate}_${i + 1}.${ext}`;
@@ -332,7 +334,7 @@ const SummaryPage: React.FC = () => {
       }
 
       if (downloadCount === 0) {
-        toast.error('所有图片下载失败，请检查网络');
+        toast.error(t('toast.allImagesFailed'));
         return;
       }
 
@@ -340,13 +342,13 @@ const SummaryPage: React.FC = () => {
       saveAs(zipBlob, `${startDate}_${endDate}_司机图片.zip`);
 
       if (failCount > 0) {
-        toast.warning(`导出完成，${downloadCount}张成功，${failCount}张失败`);
+        toast.warning(t('toast.imageExportPartial', { success: downloadCount, failed: failCount }));
       } else {
-        toast.success(`导出成功，共${downloadCount}张图片`);
+        toast.success(t('toast.imageExportSuccess', { count: downloadCount }));
       }
     } catch (error) {
       console.error('导出图片失败:', error);
-      toast.error('导出图片失败，请重试');
+      toast.error(t('toast.exportFailed'));
     } finally {
       setExportingImages(false);
     }
@@ -356,28 +358,28 @@ const SummaryPage: React.FC = () => {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">总表</h1>
+          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('summary.title')}</h1>
           <div className="flex items-center gap-2">
             <Button onClick={loadRecords} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
-              刷新
+              {t('common.refresh')}
             </Button>
             <Button onClick={handleExport} size="sm">
               <Download className="h-4 w-4 mr-2" />
-              导出Excel
+              {t('common.exportExcel')}
             </Button>
             <Select value={imageGroupBy} onValueChange={(v) => setImageGroupBy(v as 'date' | 'driver')}>
               <SelectTrigger className="w-32 h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="date">按日期分组</SelectItem>
-                <SelectItem value="driver">按司机分组</SelectItem>
+                <SelectItem value="date">{t('summary.groupByDate')}</SelectItem>
+                <SelectItem value="driver">{t('summary.groupByDriver')}</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleExportImages} size="sm" loading={exportingImages} loadingText="导出中...">
+            <Button onClick={handleExportImages} size="sm" loading={exportingImages} loadingText={t('common.exporting')}>
               <Image className="h-4 w-4 mr-2" />
-              导出图片
+              {t('common.exportImages')}
             </Button>
           </div>
         </div>
@@ -387,7 +389,7 @@ const SummaryPage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>开始日期</Label>
+                <Label>{t('common.startDate')}</Label>
                 <input
                   type="date"
                   value={startDate}
@@ -396,7 +398,7 @@ const SummaryPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>结束日期</Label>
+                <Label>{t('common.endDate')}</Label>
                 <input
                   type="date"
                   value={endDate}
@@ -405,13 +407,13 @@ const SummaryPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>司机</Label>
+                <Label>{t('common.driver')}</Label>
                 <Select value={driverId || 'all'} onValueChange={(value) => setDriverId(value === 'all' ? '' : value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="全部司机" />
+                    <SelectValue placeholder={t('common.allDrivers')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部司机</SelectItem>
+                    <SelectItem value="all">{t('common.allDrivers')}</SelectItem>
                     {drivers.map((driver) => (
                       <SelectItem key={driver.id} value={driver.id.toString()}>
                         {driver.name}
@@ -427,20 +429,20 @@ const SummaryPage: React.FC = () => {
         {/* 汇总信息 */}
         <Card>
           <CardHeader>
-            <CardTitle>汇总信息</CardTitle>
+            <CardTitle>{t('summary.summaryInfo')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <div className="text-sm text-muted-foreground mb-1">筛选范围内总支出</div>
+                <div className="text-sm text-muted-foreground mb-1">{t('summary.filteredExpense')}</div>
                 <div className="text-2xl font-bold">¥{getTotalExpense().toFixed(2)}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground mb-1">筛选范围内总提成</div>
+                <div className="text-sm text-muted-foreground mb-1">{t('summary.filteredCommission')}</div>
                 <div className="text-2xl font-bold">¥{getTotalCommission().toFixed(2)}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground mb-1">记录总条数</div>
+                <div className="text-sm text-muted-foreground mb-1">{t('summary.totalRecords')}</div>
                 <div className="text-2xl font-bold">{records.length}</div>
               </div>
             </div>
@@ -451,20 +453,20 @@ const SummaryPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">加载中...</div>
+              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
             ) : records.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">暂无数据</div>
+              <div className="text-center py-8 text-muted-foreground">{t('common.noData')}</div>
             ) : (
               <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
                 <Table>
                   <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
                       <TableHead className="w-8"></TableHead>
-                      <TableHead>日期</TableHead>
-                      <TableHead>司机</TableHead>
-                      <TableHead>加班</TableHead>
-                      <TableHead>条数 / 合计</TableHead>
-                      <TableHead className="text-right">提成合计</TableHead>
+                      <TableHead>{t('common.date')}</TableHead>
+                      <TableHead>{t('common.driver')}</TableHead>
+                      <TableHead>{t('common.overtime')}</TableHead>
+                      <TableHead>{t('summary.countAndTotal')}</TableHead>
+                      <TableHead className="text-right">{t('summary.commissionTotal')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -490,10 +492,10 @@ const SummaryPage: React.FC = () => {
                             <TableCell>{group.driverName}</TableCell>
                             <TableCell>
                               {group.isOvertime
-                                ? <span className="text-orange-600 font-medium">加班</span>
-                                : <span className="text-muted-foreground">否</span>}
+                                ? <span className="text-orange-600 font-medium">{t('common.overtime')}</span>
+                                : <span className="text-muted-foreground">{t('common.no')}</span>}
                             </TableCell>
-                            <TableCell>{group.records.length} 条 · ¥{totalExpense.toFixed(2)}</TableCell>
+                            <TableCell>{t('summary.rowsWithAmount', { count: group.records.length, amount: totalExpense.toFixed(2) })}</TableCell>
                             <TableCell className="text-right">¥{totalCommission.toFixed(2)}</TableCell>
                           </TableRow>
 
@@ -506,7 +508,7 @@ const SummaryPage: React.FC = () => {
                               <TableCell className="text-muted-foreground" colSpan={2}>
                                 ¥{Number(record.total_expense).toFixed(2)}
                                 {Number(record.commission) > 0 && (
-                                  <span className="ml-2 text-muted-foreground">提成¥{Number(record.commission).toFixed(2)}</span>
+                                  <span className="ml-2 text-muted-foreground">{t('summary.commissionPrefix', { amount: Number(record.commission).toFixed(2) })}</span>
                                 )}
                               </TableCell>
                               <TableCell className="text-right text-muted-foreground text-xs">

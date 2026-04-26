@@ -18,8 +18,10 @@ import { format, startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import EditExpenseDialog from '@/components/expenses/EditExpenseDialog';
+import { useTranslation } from 'react-i18next';
 
 const ExpensesPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [records, setRecords] = useState<ExpenseRecordWithDriver[]>([]);
@@ -53,7 +55,7 @@ const ExpensesPage: React.FC = () => {
       setDrivers(driverList);
     } catch (error) {
       console.error('加载司机列表失败:', error);
-      toast.error('加载司机列表失败');
+      toast.error(t('toast.loadDriversFailed'));
     }
   };
 
@@ -70,7 +72,7 @@ const ExpensesPage: React.FC = () => {
       setSelectedIds([]);
     } catch (error) {
       console.error('加载报账记录失败:', error);
-      toast.error('加载报账记录失败');
+      toast.error(t('toast.loadDataFailed'));
     } finally {
       setLoading(false);
     }
@@ -88,12 +90,12 @@ const ExpensesPage: React.FC = () => {
         target_id: id,
         detail: '确认报账记录',
       });
-      toast.success('确认成功');
+      toast.success(t('toast.confirmSuccess'));
       setActiveRecord(null);
       loadRecords();
     } catch (error) {
       console.error('确认失败:', error);
-      toast.error('确认失败，请重试');
+      toast.error(t('toast.confirmFailed'));
     }
   };
 
@@ -111,12 +113,12 @@ const ExpensesPage: React.FC = () => {
           detail: '批量确认报账记录',
         });
       }
-      toast.success(`成功确认 ${selectedIds.length} 条记录`);
+      toast.success(t('expenses.batchConfirmSuccess', { count: selectedIds.length }));
       setConfirmDialogOpen(false);
       loadRecords();
     } catch (error) {
       console.error('批量确认失败:', error);
-      toast.error('批量确认失败，请重试');
+      toast.error(t('expenses.batchConfirmFailed'));
     }
   };
 
@@ -134,12 +136,12 @@ const ExpensesPage: React.FC = () => {
           detail: `批量填写提成：¥${batchCommission}`,
         });
       }
-      toast.success(`成功填写 ${selectedIds.length} 条记录的提成`);
+      toast.success(t('expenses.batchCommissionSuccess', { count: selectedIds.length }));
       setBatchCommissionDialogOpen(false);
       loadRecords();
     } catch (error) {
       console.error('批量填写提成失败:', error);
-      toast.error('批量填写提成失败，请重试');
+      toast.error(t('expenses.batchCommissionFailed'));
     }
   };
 
@@ -175,10 +177,10 @@ const ExpensesPage: React.FC = () => {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">报账管理</h1>
+          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('expenses.title')}</h1>
           <Button onClick={loadRecords} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
-            刷新
+            {t('common.refresh')}
           </Button>
         </div>
 
@@ -187,13 +189,13 @@ const ExpensesPage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="flex flex-wrap items-end gap-4">
               <div className="space-y-2 min-w-[180px] flex-1">
-                <Label>司机</Label>
+                <Label>{t('common.driver')}</Label>
                 <Select value={filters.driverId || 'all'} onValueChange={(value) => setFilters({ ...filters, driverId: value === 'all' ? '' : value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="全部司机" />
+                    <SelectValue placeholder={t('common.allDrivers')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部司机</SelectItem>
+                    <SelectItem value="all">{t('common.allDrivers')}</SelectItem>
                     {drivers.map((driver) => (
                       <SelectItem key={driver.id} value={driver.id.toString()}>
                         {driver.name}
@@ -203,7 +205,7 @@ const ExpensesPage: React.FC = () => {
                 </Select>
               </div>
               <div className="space-y-2 min-w-[180px]">
-                <Label>开始日期</Label>
+                <Label>{t('common.startDate')}</Label>
                 <Input
                   type="date"
                   value={filters.startDate}
@@ -211,7 +213,7 @@ const ExpensesPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2 min-w-[180px]">
-                <Label>结束日期</Label>
+                <Label>{t('common.endDate')}</Label>
                 <Input
                   type="date"
                   value={filters.endDate}
@@ -219,15 +221,15 @@ const ExpensesPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2 min-w-[160px]">
-                <Label>状态</Label>
+                <Label>{t('common.status')}</Label>
                 <Select value={filters.status || 'all'} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部</SelectItem>
-                    <SelectItem value="pending">待确认</SelectItem>
-                    <SelectItem value="confirmed">已确认</SelectItem>
+                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                    <SelectItem value="pending">{t('common.pending')}</SelectItem>
+                    <SelectItem value="confirmed">{t('common.confirmed')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -238,12 +240,12 @@ const ExpensesPage: React.FC = () => {
         {/* 批量操作按钮 */}
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">已选择 {selectedIds.length} 条</span>
+            <span className="text-sm text-muted-foreground">{t('common.selectedCount', { count: selectedIds.length })}</span>
             <Button size="sm" onClick={() => setBatchCommissionDialogOpen(true)}>
-              批量填提成
+              {t('expenses.batchCommission')}
             </Button>
             <Button size="sm" onClick={() => setConfirmDialogOpen(true)}>
-              批量确认
+              {t('expenses.batchConfirm')}
             </Button>
           </div>
         )}
@@ -252,7 +254,7 @@ const ExpensesPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">加载中...</div>
+              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
             ) : (
               <Table className="w-full table-auto text-sm">
                 <TableHeader>
@@ -263,14 +265,14 @@ const ExpensesPage: React.FC = () => {
                         onCheckedChange={toggleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className="w-[86px] whitespace-nowrap px-1">日期</TableHead>
-                    <TableHead className="w-[60px] whitespace-nowrap px-1">司机</TableHead>
-                    <TableHead className="w-[72px] whitespace-nowrap px-1">车牌号</TableHead>
-                    <TableHead className="w-[100px] px-1">路线/地点</TableHead>
-                    <TableHead className="w-[72px] whitespace-nowrap text-right px-1">支出</TableHead>
-                    <TableHead className="w-[64px] whitespace-nowrap text-right px-1">提成</TableHead>
-                    <TableHead className="w-[64px] whitespace-nowrap px-1">状态</TableHead>
-                    <TableHead className="w-[78px] whitespace-nowrap px-1">操作</TableHead>
+                    <TableHead className="w-[86px] whitespace-nowrap px-1">{t('common.date')}</TableHead>
+                    <TableHead className="w-[60px] whitespace-nowrap px-1">{t('common.driver')}</TableHead>
+                    <TableHead className="w-[72px] whitespace-nowrap px-1">{t('vehicles.plateNumber')}</TableHead>
+                    <TableHead className="w-[100px] px-1">{t('expenses.route')}</TableHead>
+                    <TableHead className="w-[72px] whitespace-nowrap text-right px-1">{t('expenses.expense')}</TableHead>
+                    <TableHead className="w-[64px] whitespace-nowrap text-right px-1">{t('expenses.commission')}</TableHead>
+                    <TableHead className="w-[64px] whitespace-nowrap px-1">{t('common.status')}</TableHead>
+                    <TableHead className="w-[78px] whitespace-nowrap px-1">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -279,7 +281,7 @@ const ExpensesPage: React.FC = () => {
                       <TableCell colSpan={9} className="text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2 py-6">
                           <Inbox className="h-6 w-6 text-muted-foreground" />
-                          <span>暂无报账记录</span>
+                          <span>{t('expenses.noRecords')}</span>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -306,11 +308,11 @@ const ExpensesPage: React.FC = () => {
                         <TableCell className="whitespace-nowrap px-1">
                           {record.status === 'pending' ? (
                             <Badge variant="outline" className="border-warning text-warning">
-                              待确认
+                              {t('common.pending')}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="border-success text-success">
-                              已确认
+                              {t('common.confirmed')}
                             </Badge>
                           )}
                         </TableCell>
@@ -321,7 +323,7 @@ const ExpensesPage: React.FC = () => {
                             className="h-7 px-2 text-xs"
                             onClick={() => setActiveRecord(record)}
                           >
-                            查看
+                            {t('common.view')}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -351,14 +353,14 @@ const ExpensesPage: React.FC = () => {
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认操作</AlertDialogTitle>
+            <AlertDialogTitle>{t('expenses.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要确认选中的 {selectedIds.length} 条报账记录吗？确认后将无法修改。
+              {t('expenses.confirmDescription', { count: selectedIds.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBatchConfirm}>确认</AlertDialogAction>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBatchConfirm}>{t('common.confirm')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -367,29 +369,29 @@ const ExpensesPage: React.FC = () => {
       <Dialog open={batchCommissionDialogOpen} onOpenChange={setBatchCommissionDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>批量填写提成</DialogTitle>
+            <DialogTitle>{t('expenses.batchCommissionTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>提成金额</Label>
+              <Label>{t('expenses.commissionAmount')}</Label>
               <Input
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="请输入提成金额"
+                placeholder={t('expenses.commissionPlaceholder')}
                 value={batchCommission}
                 onChange={(e) => setBatchCommission(e.target.value)}
               />
             </div>
             <div className="text-sm text-muted-foreground">
-              将为选中的 {selectedIds.length} 条记录填写提成
+              {t('expenses.batchCommissionHint', { count: selectedIds.length })}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBatchCommissionDialogOpen(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleBatchCommission}>确认</Button>
+            <Button onClick={handleBatchCommission}>{t('common.confirm')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

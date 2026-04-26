@@ -14,6 +14,7 @@ import { buildContractReviewUserPrompt, CONTRACT_REVIEW_SYSTEM_PROMPT } from '@/
 import { parseLegalFile, type ParsedLegalFile } from '@/lib/fileParsers';
 import { chatWithMiniMaxStream } from '@/lib/minimax';
 import type { LegalReview } from '@/types/database';
+import { useTranslation } from 'react-i18next';
 
 function getRiskLevel(content: string): LegalReview['risk_level'] {
   const matched = content.match(/总体风险评级[：:\s]*([高中低])/);
@@ -39,6 +40,7 @@ function getRiskBadgeVariant(level: string | null): 'destructive' | 'secondary' 
 }
 
 const ContractReview = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedFile, setParsedFile] = useState<ParsedLegalFile | null>(null);
@@ -60,7 +62,7 @@ const ContractReview = () => {
       const reviews = await getRecentLegalReviews(10);
       setHistoryItems(reviews);
     } catch (loadError) {
-      const message = loadError instanceof Error ? loadError.message : '历史记录加载失败，请稍后重试。';
+      const message = loadError instanceof Error ? loadError.message : t('legal.historyLoadFailed');
       setHistoryError(message);
     } finally {
       setHistoryLoading(false);
@@ -85,9 +87,9 @@ const ContractReview = () => {
     try {
       const parsed = await parseLegalFile(file);
       setParsedFile(parsed);
-      toast.success('合同正文解析完成');
+      toast.success(t('legal.fileParsed'));
     } catch (fileError) {
-      const message = fileError instanceof Error ? fileError.message : '文件解析失败，请重试。';
+      const message = fileError instanceof Error ? fileError.message : t('legal.fileParseFailed');
       setError(message);
       toast.error(message);
     }
@@ -95,7 +97,7 @@ const ContractReview = () => {
 
   const handleReview = async () => {
     if (!selectedFile) {
-      const message = '请先上传需要审查的合同文件。';
+      const message = t('legal.uploadFirst');
       setError(message);
       toast.error(message);
       return;
@@ -125,7 +127,7 @@ const ContractReview = () => {
         setReviewResult((prev) => prev + chunk);
       });
 
-      const finalResult = response || 'MiniMax 已返回，但内容为空。建议稍后重试，或缩短合同内容后再次审查。';
+      const finalResult = response || t('legal.emptyModelResult');
       const savedReview = await createLegalReview({
         file_name: parsed.fileName,
         review_result: finalResult,
@@ -136,9 +138,9 @@ const ContractReview = () => {
       setReviewResult(finalResult);
       setActiveHistoryId(savedReview.id);
       await loadHistory();
-      toast.success('合同审查完成，已保存到历史记录');
+      toast.success(t('legal.reviewSaved'));
     } catch (reviewError) {
-      const message = reviewError instanceof Error ? reviewError.message : '合同审查失败，请稍后重试。';
+      const message = reviewError instanceof Error ? reviewError.message : t('legal.reviewFailed');
       setError(message);
       toast.error(message);
     } finally {
@@ -152,23 +154,23 @@ const ContractReview = () => {
         <CardHeader className="border-b bg-gradient-to-b from-[#0f2a5e] to-[#1a3f8f] pb-4 text-white">
           <CardTitle className="flex items-center gap-2 text-base">
             <History className="h-4 w-4" />
-            审查记录
+            {t('legal.history')}
           </CardTitle>
-          <CardDescription className="text-white/70">最近 10 条合同审查结果</CardDescription>
+          <CardDescription className="text-white/70">{t('legal.recentReviews')}</CardDescription>
         </CardHeader>
         <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">
           {historyLoading ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">正在加载历史记录...</div>
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">{t('legal.historyLoading')}</div>
           ) : historyError ? (
             <div className="px-4 py-4">
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>历史记录加载失败</AlertTitle>
+                <AlertTitle>{t('legal.historyLoadFailed')}</AlertTitle>
                 <AlertDescription>{historyError}</AlertDescription>
               </Alert>
             </div>
           ) : historyItems.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">暂无审查历史</div>
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">{t('legal.noHistory')}</div>
           ) : (
             <div className="flex flex-col">
               {historyItems.map((item) => (
@@ -192,10 +194,10 @@ const ContractReview = () => {
                       variant={getRiskBadgeVariant(item.risk_level)}
                       className={activeHistoryId === item.id ? 'border-white/20 bg-white/15 text-white hover:bg-white/15' : ''}
                     >
-                      {item.risk_level || '未评级'}
+                      {item.risk_level || t('legal.unrated')}
                     </Badge>
                     <div className={`text-[11px] ${activeHistoryId === item.id ? 'text-white/70' : 'text-muted-foreground'}`}>
-                      {item.created_at ? new Date(item.created_at).toLocaleString('zh-CN') : '无创建时间'}
+                      {item.created_at ? new Date(item.created_at).toLocaleString('zh-CN') : t('legal.noCreatedAt')}
                     </div>
                   </div>
                 </button>
@@ -210,17 +212,17 @@ const ContractReview = () => {
           <div className="flex flex-wrap items-center gap-3">
             <CardTitle className="flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-primary" />
-              审查结果
+              {t('legal.reviewResult')}
             </CardTitle>
-            {riskLevel ? <Badge variant={getRiskBadgeVariant(riskLevel)}>总体风险评级：{riskLevel}</Badge> : null}
+            {riskLevel ? <Badge variant={getRiskBadgeVariant(riskLevel)}>{t('legal.riskLevel', { level: riskLevel })}</Badge> : null}
           </div>
-          <CardDescription>审查输出会优先聚焦赔偿责任敞口、分包追偿链条、货损举证和争议解决等风险。</CardDescription>
+          <CardDescription>{t('legal.reviewDescription')}</CardDescription>
         </CardHeader>
         {error ? (
           <div className="px-6 pt-6">
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>处理失败</AlertTitle>
+              <AlertTitle>{t('legal.processFailed')}</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           </div>
@@ -236,11 +238,11 @@ const ContractReview = () => {
             </ScrollArea>
           ) : loading ? (
             <div className="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground">
-              正在解析合同并提交 MiniMax 审查，请稍候...
+              {t('legal.reviewing')}
             </div>
           ) : (
             <div className="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground">
-              上传合同后点击“开始审查”，这里会展示总体风险评级、关键风险点、原文摘录、修改建议和法务复核事项。
+              {t('legal.emptyReviewHint')}
             </div>
           )}
         </CardContent>
@@ -253,12 +255,14 @@ const ContractReview = () => {
               <UploadCloud className="h-4 w-4 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-foreground">
-                  {selectedFile ? selectedFile.name : '点击选择合同文件'}
+                  {selectedFile ? selectedFile.name : t('legal.selectFile')}
                 </div>
                 <div className="mt-1 truncate text-xs text-muted-foreground">
                   {parsedFile
-                    ? `已解析 ${parsedFile.originalLength} 字${parsedFile.originalLength > parsedFile.truncatedLength ? `，提交模型 ${parsedFile.truncatedLength} 字` : ''}`
-                    : '支持 PDF、DOCX，点击此处重新选择文件'}
+                    ? parsedFile.originalLength > parsedFile.truncatedLength
+                      ? t('legal.parsedCharsSubmitted', { original: parsedFile.originalLength, truncated: parsedFile.truncatedLength })
+                      : t('legal.parsedChars', { original: parsedFile.originalLength })
+                    : t('legal.fileHelp')}
                 </div>
               </div>
               <input
@@ -269,8 +273,8 @@ const ContractReview = () => {
                 onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
               />
             </label>
-            <Button onClick={handleReview} loading={loading} loadingText="审查中..." className="shrink-0">
-              开始审查
+            <Button onClick={handleReview} loading={loading} loadingText={t('legal.reviewLoading')} className="shrink-0">
+              {t('legal.startReview')}
             </Button>
           </div>
         </div>

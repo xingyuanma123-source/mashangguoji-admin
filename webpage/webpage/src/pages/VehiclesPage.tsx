@@ -14,8 +14,10 @@ import type { Vehicle } from '@/types/database';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const VehiclesPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ const VehiclesPage: React.FC = () => {
       setVehicles(data);
     } catch (error) {
       console.error('加载车辆列表失败:', error);
-      toast.error('加载车辆列表失败');
+      toast.error(t('toast.loadVehiclesFailed'));
     } finally {
       setLoading(false);
     }
@@ -69,12 +71,12 @@ const VehiclesPage: React.FC = () => {
     if (!user) return;
 
     if (!formData.plate_number) {
-      toast.error('请填写车牌号');
+      toast.error(t('vehicles.plateRequired'));
       return;
     }
 
     if ((formData.vehicle_type === 'affiliated' || formData.vehicle_type === 'rented') && !formData.source) {
-      toast.error('挂靠车和租用车必须填写来源');
+      toast.error(t('vehicles.sourceRequired'));
       return;
     }
 
@@ -89,7 +91,7 @@ const VehiclesPage: React.FC = () => {
           target_id: editingVehicle.id,
           detail: `修改车辆信息：${formData.plate_number}`,
         });
-        toast.success('修改成功');
+        toast.success(t('toast.updateSuccess'));
       } else {
         const newVehicle = await createVehicle({
           ...formData,
@@ -103,13 +105,13 @@ const VehiclesPage: React.FC = () => {
           target_id: newVehicle.id,
           detail: `新增车辆：${formData.plate_number}`,
         });
-        toast.success('新增成功');
+        toast.success(t('toast.createSuccess'));
       }
       setDialogOpen(false);
       loadVehicles();
     } catch (error) {
       console.error('操作失败:', error);
-      toast.error('操作失败，请重试');
+      toast.error(t('toast.operationFailed'));
     }
   };
 
@@ -125,19 +127,19 @@ const VehiclesPage: React.FC = () => {
         target_id: vehicle.id,
         detail: `${vehicle.is_active ? '停用' : '启用'}车辆：${vehicle.plate_number}`,
       });
-      toast.success(vehicle.is_active ? '已停用' : '已启用');
+      toast.success(vehicle.is_active ? t('toast.disabled') : t('toast.enabled'));
       loadVehicles();
     } catch (error) {
       console.error('操作失败:', error);
-      toast.error('操作失败，请重试');
+      toast.error(t('toast.operationFailed'));
     }
   };
 
   const getVehicleTypeName = (type: string) => {
     const typeMap: Record<string, string> = {
-      own: '自有车',
-      affiliated: '挂靠车',
-      rented: '租用车',
+      own: t('vehicles.own'),
+      affiliated: t('vehicles.affiliated'),
+      rented: t('vehicles.rented'),
     };
     return typeMap[type] || type;
   };
@@ -152,15 +154,15 @@ const VehiclesPage: React.FC = () => {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">车辆管理</h1>
+          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('vehicles.title')}</h1>
           <div className="flex items-center gap-2">
             <Button onClick={loadVehicles} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
-              刷新
+              {t('common.refresh')}
             </Button>
             <Button onClick={() => handleOpenDialog()} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              新增车辆
+              {t('vehicles.add')}
             </Button>
           </div>
         </div>
@@ -169,42 +171,42 @@ const VehiclesPage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <Input
-                placeholder="搜索车牌号..."
+                placeholder={t('common.searchPlate')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <Select value={filterType || 'all'} onValueChange={(value) => setFilterType(value === 'all' ? '' : value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="全部类型" />
+                  <SelectValue placeholder={t('common.allTypes')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部类型</SelectItem>
-                  <SelectItem value="own">自有车</SelectItem>
-                  <SelectItem value="affiliated">挂靠车</SelectItem>
-                  <SelectItem value="rented">租用车</SelectItem>
+                  <SelectItem value="all">{t('common.allTypes')}</SelectItem>
+                  <SelectItem value="own">{t('vehicles.own')}</SelectItem>
+                  <SelectItem value="affiliated">{t('vehicles.affiliated')}</SelectItem>
+                  <SelectItem value="rented">{t('vehicles.rented')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">加载中...</div>
+              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>车牌号</TableHead>
-                    <TableHead>车辆类型</TableHead>
-                    <TableHead>来源</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('vehicles.plateNumber')}</TableHead>
+                    <TableHead>{t('vehicles.vehicleType')}</TableHead>
+                    <TableHead>{t('vehicles.source')}</TableHead>
+                    <TableHead>{t('common.status')}</TableHead>
+                    <TableHead>{t('common.createdAt')}</TableHead>
+                    <TableHead>{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredVehicles.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        暂无数据
+                        {t('common.noData')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -216,11 +218,11 @@ const VehiclesPage: React.FC = () => {
                         <TableCell>
                           {vehicle.is_active ? (
                             <Badge variant="outline" className="bg-success/10 text-success border-success">
-                              启用
+                              {t('common.enabled')}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="bg-muted text-muted-foreground">
-                              停用
+                              {t('common.disabled')}
                             </Badge>
                           )}
                         </TableCell>
@@ -233,7 +235,7 @@ const VehiclesPage: React.FC = () => {
                               onClick={() => handleOpenDialog(vehicle)}
                             >
                               <Edit className="h-4 w-4 mr-1" />
-                              编辑
+                              {t('common.edit')}
                             </Button>
                             <Button
                               size="sm"
@@ -241,7 +243,7 @@ const VehiclesPage: React.FC = () => {
                               onClick={() => handleToggleActive(vehicle)}
                             >
                               <Power className="h-4 w-4 mr-1" />
-                              {vehicle.is_active ? '停用' : '启用'}
+                              {vehicle.is_active ? t('common.disabled') : t('common.enabled')}
                             </Button>
                           </div>
                         </TableCell>
@@ -259,19 +261,19 @@ const VehiclesPage: React.FC = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingVehicle ? '编辑车辆' : '新增车辆'}</DialogTitle>
+            <DialogTitle>{editingVehicle ? t('vehicles.edit') : t('vehicles.add')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>车牌号</Label>
+              <Label>{t('vehicles.plateNumber')}</Label>
               <Input
                 value={formData.plate_number}
                 onChange={(e) => setFormData({ ...formData, plate_number: e.target.value })}
-                placeholder="请输入车牌号"
+                placeholder={t('vehicles.inputPlate')}
               />
             </div>
             <div className="space-y-2">
-              <Label>车辆类型</Label>
+              <Label>{t('vehicles.vehicleType')}</Label>
               <Select
                 value={formData.vehicle_type}
                 onValueChange={(value: 'own' | 'affiliated' | 'rented') =>
@@ -282,29 +284,29 @@ const VehiclesPage: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="own">自有车</SelectItem>
-                  <SelectItem value="affiliated">挂靠车</SelectItem>
-                  <SelectItem value="rented">租用车</SelectItem>
+                  <SelectItem value="own">{t('vehicles.own')}</SelectItem>
+                  <SelectItem value="affiliated">{t('vehicles.affiliated')}</SelectItem>
+                  <SelectItem value="rented">{t('vehicles.rented')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {(formData.vehicle_type === 'affiliated' || formData.vehicle_type === 'rented') && (
               <div className="space-y-2">
-                <Label>来源</Label>
+                <Label>{t('vehicles.source')}</Label>
                 <Input
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  placeholder="请输入来源"
+                  placeholder={t('vehicles.inputSource')}
                 />
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmit}>
-              {editingVehicle ? '保存' : '新增'}
+              {editingVehicle ? t('common.save') : t('common.add')}
             </Button>
           </DialogFooter>
         </DialogContent>

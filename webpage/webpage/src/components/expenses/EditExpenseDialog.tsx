@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface EditExpenseDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
   onPrev,
   onNext,
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
@@ -357,13 +359,13 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
         detail: `修改报账记录，总支出从 ¥${record.total_expense} 改为 ¥${totalExpense}`,
       });
 
-      toast.success('修改成功');
+      toast.success(t('toast.updateSuccess'));
       onSuccess();
       setIsEditing(false);
       onOpenChange(false);
     } catch (error) {
       console.error('修改失败:', error);
-      toast.error('修改失败，请重试');
+      toast.error(t('toast.operationFailed'));
     } finally {
       setLoading(false);
     }
@@ -383,11 +385,11 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
         throw error;
       }
 
-      toast.success('提成已保存');
+      toast.success(t('editExpense.commissionSaved'));
       onSuccess();
     } catch (error) {
       console.error('提成保存失败:', error);
-      toast.error('修改失败，请重试');
+      toast.error(t('toast.operationFailed'));
     } finally {
       setLoading(false);
     }
@@ -399,23 +401,23 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent ref={dialogContentRef} className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>查看报账记录</DialogTitle>
+          <DialogTitle>{t('editExpense.title')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label className="text-muted-foreground">日期</Label>
+              <Label className="text-muted-foreground">{t('common.date')}</Label>
               <Input value={format(new Date(record.record_date), 'yyyy-MM-dd')} disabled />
             </div>
             <div className="space-y-1">
-              <Label className="text-muted-foreground">司机</Label>
+              <Label className="text-muted-foreground">{t('common.driver')}</Label>
               <Input value={record.driver?.name || '-'} disabled />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>车牌号</Label>
+              <Label>{t('vehicles.plateNumber')}</Label>
               <Select value={formData.plate_number} onValueChange={(value) => setFormData({ ...formData, plate_number: value })} disabled={!isEditing}>
                 <SelectTrigger>
                   <SelectValue />
@@ -430,7 +432,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>路线/地点</Label>
+              <Label>{t('expenses.route')}</Label>
               <Input
                 value={formData.route}
                 disabled={!isEditing}
@@ -440,12 +442,12 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
           </div>
 
           <div className="space-y-3">
-            <Label className="text-base font-semibold">费用明细</Label>
+            <Label className="text-base font-semibold">{t('editExpense.feeDetails')}</Label>
             <div className="space-y-2">
               <div className="grid grid-cols-[140px_120px_minmax(0,1fr)] items-center gap-3 text-xs text-muted-foreground">
-                <div>费用名称</div>
-                <div>费用金额</div>
-                <div>费用明细（地址+费用）</div>
+                <div>{t('editExpense.feeName')}</div>
+                <div>{t('editExpense.feeAmount')}</div>
+                <div>{t('editExpense.feeDetail')}</div>
               </div>
               {feeTypes.map((feeType) => (
                 <div key={feeType.id} className="grid grid-cols-[140px_120px_minmax(0,1fr)] items-center gap-3">
@@ -479,14 +481,14 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">其他费用</Label>
+              <Label className="text-base font-semibold">{t('editExpense.otherFees')}</Label>
               <div className="text-sm text-muted-foreground">
-                合计 ¥{otherFees.reduce((sum, item) => sum + (Number(item.amount) || 0), 0).toFixed(2)}
+                {t('editExpense.otherFeesTotal', { amount: otherFees.reduce((sum, item) => sum + (Number(item.amount) || 0), 0).toFixed(2) })}
               </div>
             </div>
             {otherFees.length === 0 && (
               <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-                暂无其他费用
+                {t('editExpense.noOtherFees')}
               </div>
             )}
             {otherFees.map((item, index) => (
@@ -494,7 +496,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
                 <Input
                   value={item.name}
                   disabled={!isEditing}
-                  placeholder="其他费用名称"
+                  placeholder={t('editExpense.otherFeeName')}
                   onChange={(e) =>
                     setOtherFees((prev) =>
                       prev.map((fee, feeIndex) =>
@@ -508,7 +510,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
                   step="0.01"
                   disabled={!isEditing}
                   value={item.amount}
-                  placeholder="金额"
+                  placeholder={t('common.amount')}
                   onChange={(e) =>
                     setOtherFees((prev) =>
                       prev.map((fee, feeIndex) =>
@@ -523,7 +525,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
                     variant="outline"
                     onClick={() => setOtherFees((prev) => prev.filter((_, feeIndex) => feeIndex !== index))}
                   >
-                    删除
+                    {t('common.delete')}
                   </Button>
                 )}
               </div>
@@ -534,18 +536,18 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
                 variant="outline"
                 onClick={() => setOtherFees((prev) => [...prev, { ...createEmptyOtherFee(), sort_order: prev.length }])}
               >
-                添加其他费用
+                {t('editExpense.addOtherFee')}
               </Button>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label>提成</Label>
+            <Label>{t('expenses.commission')}</Label>
             <Input
               type="number"
               step="0.01"
               min="0"
-              placeholder="请输入提成金额"
+              placeholder={t('expenses.commissionPlaceholder')}
               value={formData.commission || ''}
               onChange={(e) => setFormData({ ...formData, commission: Number(e.target.value) || 0 })}
             />
@@ -557,18 +559,18 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
               disabled={!isEditing}
               onCheckedChange={(checked) => setFormData({ ...formData, is_overtime: checked })}
             />
-            <Label>加班</Label>
+            <Label>{t('common.overtime')}</Label>
           </div>
 
           {record.receipt_images && record.receipt_images.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-base font-semibold">账单图片</Label>
+              <Label className="text-base font-semibold">{t('editExpense.billImages')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {record.receipt_images.map((url: string, index: number) => (
                   <a key={index} href={url} target="_blank" rel="noopener noreferrer">
                     <img
                       src={url}
-                      alt={`账单图片 ${index + 1}`}
+                      alt={t('editExpense.billImageAlt', { index: index + 1 })}
                       className="w-full rounded border object-cover cursor-pointer hover:opacity-80 transition-opacity"
                       style={{ maxHeight: '200px' }}
                     />
@@ -579,38 +581,38 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
           )}
 
           <div className="p-4 bg-muted rounded-lg">
-            <div className="text-sm text-muted-foreground mb-1">支出合计</div>
+            <div className="text-sm text-muted-foreground mb-1">{t('editExpense.totalExpense')}</div>
             <div className="text-2xl font-bold">¥{calculateTotalExpense().toFixed(2)}</div>
           </div>
         </div>
         <DialogFooter>
           <div className="mr-auto flex items-center gap-2">
             <Button variant="outline" onClick={onPrev} disabled={!hasPrev || loading}>
-              上一条
+              {t('editExpense.previous')}
             </Button>
             <Button variant="outline" onClick={onNext} disabled={!hasNext || loading}>
-              下一条
+              {t('editExpense.next')}
             </Button>
           </div>
           {record.status === 'pending' && !isEditing && onConfirm && (
             <Button onClick={() => onConfirm(record.id)} disabled={loading}>
-              确认
+              {t('common.confirm')}
             </Button>
           )}
           {!isEditing ? (
             <Button variant="outline" onClick={() => setIsEditing(true)} disabled={loading}>
-              编辑
+              {t('common.edit')}
             </Button>
           ) : (
             <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading}>
-              取消编辑
+              {t('editExpense.cancelEdit')}
             </Button>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            关闭
+            {t('common.close')}
           </Button>
-          <Button onClick={isEditing ? handleSubmit : handleSaveCommission} loading={loading} loadingText="保存中...">
-            {isEditing ? '保存' : '保存提成'}
+          <Button onClick={isEditing ? handleSubmit : handleSaveCommission} loading={loading} loadingText={t('common.saveLoading')}>
+            {isEditing ? t('common.save') : t('editExpense.saveCommission')}
           </Button>
         </DialogFooter>
       </DialogContent>

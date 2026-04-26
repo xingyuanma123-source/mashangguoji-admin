@@ -15,7 +15,7 @@ export function hasMiniMaxApiKey() {
 }
 
 async function parseMiniMaxError(response: Response) {
-  let errorMessage = `MiniMax 请求失败：HTTP ${response.status}`;
+  let errorMessage = `模型请求失败：HTTP ${response.status}`;
 
   try {
     const errorData = await response.json();
@@ -101,7 +101,7 @@ export async function chatWithMiniMaxStream(
   }
 
   if (!response.body) {
-    throw new Error('MiniMax 流式响应不可用，请稍后重试。');
+    throw new Error('模型流式响应不可用，请稍后重试。');
   }
 
   const reader = response.body.getReader();
