@@ -3,11 +3,11 @@ export type MiniMaxMessage = {
   content: string;
 };
 
-const MINIMAX_MODEL = 'MiniMax-M2.5-highspeed';
-const MINIMAX_ENDPOINT = '/api/minimax/chat/completions';
+const MINIMAX_MODEL = 'qwen/qwen3.5-122b-a10b';
+const MINIMAX_ENDPOINT = '/api/nvidia/chat/completions';
 
 function getMiniMaxApiKey() {
-  return import.meta.env.VITE_MINIMAX_API_KEY?.trim();
+  return import.meta.env.VITE_NVIDIA_API_KEY?.trim();
 }
 
 export function hasMiniMaxApiKey() {
@@ -40,7 +40,7 @@ export async function chatWithMiniMax(messages: MiniMaxMessage[]) {
   const apiKey = getMiniMaxApiKey();
 
   if (!apiKey) {
-    throw new Error('未配置 MiniMax API Key，请先在环境变量中设置 VITE_MINIMAX_API_KEY。');
+    throw new Error('未配置 NVIDIA API Key，请先在环境变量中设置 VITE_NVIDIA_API_KEY。');
   }
 
   const response = await fetch(MINIMAX_ENDPOINT, {
@@ -79,7 +79,7 @@ export async function chatWithMiniMaxStream(
   const apiKey = getMiniMaxApiKey();
 
   if (!apiKey) {
-    throw new Error('未配置 MiniMax API Key，请先在环境变量中设置 VITE_MINIMAX_API_KEY。');
+    throw new Error('未配置 NVIDIA API Key，请先在环境变量中设置 VITE_NVIDIA_API_KEY。');
   }
 
   const response = await fetch(MINIMAX_ENDPOINT, {

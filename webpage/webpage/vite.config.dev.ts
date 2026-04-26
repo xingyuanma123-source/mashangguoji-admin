@@ -21,10 +21,10 @@ export default defineConfig({
     ...(userConfig.server || {}),
     proxy: {
       ...(userConfig.server?.proxy || {}),
-      '/api/minimax': {
-        target: 'https://api.minimaxi.com',
+      '/api/nvidia': {
+        target: 'https://integrate.api.nvidia.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/minimax/, '/v1'),
+        rewrite: (path) => path.replace(/^\/api\/nvidia/, '/v1'),
       },
     },
   },

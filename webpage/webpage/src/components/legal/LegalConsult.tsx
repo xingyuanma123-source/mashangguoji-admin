@@ -28,7 +28,7 @@ const LegalConsult = () => {
 
   const placeholder = useMemo(() => {
     if (!hasMiniMaxApiKey()) {
-      return '请先配置 VITE_MINIMAX_API_KEY 后再发起咨询';
+      return '请先配置 VITE_NVIDIA_API_KEY 后再发起咨询';
     }
 
     return '请输入合同、货损赔偿、分包责任或跨境运输争议相关问题';
