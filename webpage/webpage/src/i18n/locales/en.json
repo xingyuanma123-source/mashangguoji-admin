@@ -179,7 +179,11 @@
     "countAndTotal": "Count / Total",
     "commissionTotal": "Commission Total",
     "commissionPrefix": "Commission ¥{{amount}}",
-    "rowsWithAmount": "{{count}} records · ¥{{amount}}"
+    "rowsWithAmount": "{{count}} records · ¥{{amount}}",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "last7Days": "Last 7 Days",
+    "thisYear": "This Year"
   },
   "drivers": {
     "title": "Driver Management",
@@ -224,6 +228,7 @@
     "loadDetailFailed": "Failed to load details",
     "noRechargeRecords": "No recharge records",
     "monthExpenseConfirmed": "This Month Expense (Confirmed):",
+    "expenseConfirmedInRange": "{{monthStart}} to {{monthEnd}} Confirmed Expense:",
     "deleteDescription": "Delete this recharge record? Amount: ¥{{amount}}"
   },
   "feeTypes": {

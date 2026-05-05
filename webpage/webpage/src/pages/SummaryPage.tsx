@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Download, RefreshCw, Image, ChevronDown, ChevronRight } from 'lucide-react';
 import { getExpenseRecords, getAllDrivers, getAdvanceFundRecords } from '@/db/api';
 import type { ExpenseRecordWithDriver, Driver, AdvanceFundRecordWithDriver } from '@/types/database';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, subDays, startOfYear } from 'date-fns';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
@@ -21,7 +21,7 @@ const SummaryPage: React.FC = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const toggleGroup = (key: string) => {
@@ -186,7 +186,7 @@ const SummaryPage: React.FC = () => {
 
         const wsData: any[][] = [];
 
-        wsData.push([`${driver.name} ${startDate} 至 ${endDate} 短驳提成  备用金${totalRecharge}`]);
+        wsData.push([`${driver.name} | 导出范围：${startDate} 至 ${endDate} | 该范围内备用金充值：¥${totalRecharge.toFixed(2)}`]);
 
         wsData.push([
           '日期', '车牌', '司机', '路线', '过磅费', '提柜费', '过夜费', '越南超时费',
@@ -354,6 +354,32 @@ const SummaryPage: React.FC = () => {
     }
   };
 
+  const applyDateRange = (range: 'thisMonth' | 'lastMonth' | 'last7Days' | 'thisYear') => {
+    const now = new Date();
+
+    if (range === 'thisMonth') {
+      setStartDate(format(startOfMonth(now), 'yyyy-MM-dd'));
+      setEndDate(format(endOfMonth(now), 'yyyy-MM-dd'));
+      return;
+    }
+
+    if (range === 'lastMonth') {
+      const lastMonth = subMonths(now, 1);
+      setStartDate(format(startOfMonth(lastMonth), 'yyyy-MM-dd'));
+      setEndDate(format(endOfMonth(lastMonth), 'yyyy-MM-dd'));
+      return;
+    }
+
+    if (range === 'last7Days') {
+      setStartDate(format(subDays(now, 6), 'yyyy-MM-dd'));
+      setEndDate(format(now, 'yyyy-MM-dd'));
+      return;
+    }
+
+    setStartDate(format(startOfYear(now), 'yyyy-MM-dd'));
+    setEndDate(format(now, 'yyyy-MM-dd'));
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -387,8 +413,8 @@ const SummaryPage: React.FC = () => {
         {/* 筛选栏 */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+              <div className="flex flex-col gap-2">
                 <Label>{t('common.startDate')}</Label>
                 <input
                   type="date"
@@ -397,7 +423,7 @@ const SummaryPage: React.FC = () => {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <Label>{t('common.endDate')}</Label>
                 <input
                   type="date"
@@ -406,7 +432,21 @@ const SummaryPage: React.FC = () => {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" onClick={() => applyDateRange('thisMonth')}>
+                  {t('summary.thisMonth')}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => applyDateRange('lastMonth')}>
+                  {t('summary.lastMonth')}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => applyDateRange('last7Days')}>
+                  {t('summary.last7Days')}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => applyDateRange('thisYear')}>
+                  {t('summary.thisYear')}
+                </Button>
+              </div>
+              <div className="flex min-w-48 flex-1 flex-col gap-2">
                 <Label>{t('common.driver')}</Label>
                 <Select value={driverId || 'all'} onValueChange={(value) => setDriverId(value === 'all' ? '' : value)}>
                   <SelectTrigger>

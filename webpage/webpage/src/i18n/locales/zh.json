@@ -179,7 +179,11 @@
     "countAndTotal": "条数 / 合计",
     "commissionTotal": "提成合计",
     "commissionPrefix": "提成¥{{amount}}",
-    "rowsWithAmount": "{{count}} 条 · ¥{{amount}}"
+    "rowsWithAmount": "{{count}} 条 · ¥{{amount}}",
+    "thisMonth": "本月",
+    "lastMonth": "上月",
+    "last7Days": "近7天",
+    "thisYear": "本年"
   },
   "drivers": {
     "title": "司机管理",
@@ -224,6 +228,7 @@
     "loadDetailFailed": "加载明细失败",
     "noRechargeRecords": "暂无充值记录",
     "monthExpenseConfirmed": "本月支出（已确认）：",
+    "expenseConfirmedInRange": "{{monthStart}} 至 {{monthEnd}} 已确认支出：",
     "deleteDescription": "确定要删除这条充值记录吗？金额：¥{{amount}}"
   },
   "feeTypes": {

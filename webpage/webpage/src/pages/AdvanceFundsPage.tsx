@@ -177,6 +177,15 @@ const AdvanceFundsPage: React.FC = () => {
     return { totalRecharge, totalExpense, balance };
   };
 
+  const getMonthRange = () => {
+    const [year, mon] = month.split('-').map(Number);
+    const lastDay = new Date(year, mon, 0).getDate();
+    const monthStart = `${month}-01`;
+    const monthEnd = `${month}-${String(lastDay).padStart(2, '0')}`;
+
+    return { monthStart, monthEnd };
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -389,7 +398,9 @@ const AdvanceFundsPage: React.FC = () => {
                 <span className="font-bold">¥{getDetailStats().totalRecharge.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium">{t('advanceFunds.monthExpenseConfirmed')}</span>
+                <span className="font-medium">
+                  {t('advanceFunds.expenseConfirmedInRange', getMonthRange())}
+                </span>
                 <span className="font-bold">¥{getDetailStats().totalExpense.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-lg">
