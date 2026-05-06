@@ -60,17 +60,19 @@ export function AuthProvider({children}: {children: ReactNode}) {
       setLoading(false)
       getDriverById(driverInfo.id).then(({data, error}) => {
         if (error) {
-          console.warn('司机状态校验失败:', error)
+          console.warn('[Auth] 司机状态校验失败:', error)
           return
         }
 
         if (!data || !data.is_active) {
+          console.log('[Auth] 司机账号已停用/删除，强制登出')
           Taro.removeStorageSync('driver_info')
           setDriver(null)
           Taro.showModal({
             title: '账号已停用',
             content: '您的账号已被管理员停用，请联系客服',
             showCancel: false,
+            confirmText: '去登录',
             success: () => {
               Taro.reLaunch({url: '/pages/login/index'})
             }
@@ -78,6 +80,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
           return
         }
 
+        console.log('[Auth] 司机状态校验通过')
         Taro.setStorageSync('driver_info', data)
         setDriver(data)
       })

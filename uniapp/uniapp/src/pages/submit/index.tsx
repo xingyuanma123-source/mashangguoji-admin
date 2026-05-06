@@ -131,18 +131,22 @@ function Submit() {
       return null
     }
 
+    console.log('[Submit] 校验司机状态:', driver.id)
     const {data: latestDriver, error: verifyError} = await getDriverById(driver.id)
     if (verifyError) {
+      console.error('[Submit] 校验失败:', verifyError)
       Taro.showToast({title: '网络异常，请重试', icon: 'none'})
       return null
     }
 
     if (!latestDriver || !latestDriver.is_active) {
+      console.log('[Submit] 司机已停用，中断提交')
       Taro.removeStorageSync('driver_info')
       Taro.showModal({
         title: '账号已停用',
         content: '您的账号已被管理员停用，无法提交报账。请联系客服',
         showCancel: false,
+        confirmText: '去登录',
         success: () => {
           Taro.reLaunch({url: '/pages/login/index'})
         }
@@ -150,6 +154,7 @@ function Submit() {
       return null
     }
 
+    console.log('[Submit] 司机状态校验通过，继续提交')
     Taro.setStorageSync('driver_info', latestDriver)
     return latestDriver
   }
