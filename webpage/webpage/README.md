@@ -39,6 +39,34 @@ npm run dev
 npm run lint
 ```
 
+## OCR 代理配置
+
+法律咨询 Chat 的图片识别会请求 `/api/ocr/recognize`。本地开发环境已在 `vite.config.dev.ts` 中代理到 `http://119.91.129.106`；生产环境需要在服务器 Nginx 配置中把 `/api/ocr/` 反代到 OCR 代理服务。
+
+在 `/etc/nginx/sites-enabled/mashangguoji` 的现有 `location /` 之前添加：
+
+```nginx
+location /api/ocr/ {
+    proxy_pass http://127.0.0.1:3001;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Origin "";
+
+    client_max_body_size 12M;
+    proxy_read_timeout 60s;
+    proxy_connect_timeout 10s;
+}
+```
+
+配置后执行：
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
 ## 环境变量
 
 在 `.env` 中配置：
