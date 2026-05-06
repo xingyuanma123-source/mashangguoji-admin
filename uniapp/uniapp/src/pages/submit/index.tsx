@@ -5,7 +5,7 @@ import {useCallback, useEffect, useState} from 'react'
 import {withRouteGuard} from '@/components/RouteGuard'
 import VehicleCardComponent from '@/components/VehicleCard'
 import {useAuth} from '@/contexts/AuthContext'
-import {createExpenseRecords, getFeeTypes} from '@/db/api'
+import {createExpenseRecords, getDriverById, getFeeTypes} from '@/db/api'
 import type {ExpenseRecord, FeeType, OtherFeeItem, VehicleCard} from '@/db/types'
 import {uploadFiles} from '@/utils/upload'
 
@@ -125,12 +125,41 @@ function Submit() {
 
   const currentVehicle = vehicles[activeVehicleIndex]
 
+  const verifyDriverIsActive = async () => {
+    if (!driver) {
+      Taro.showToast({title: '请先登录', icon: 'none'})
+      return null
+    }
+
+    const {data: latestDriver, error: verifyError} = await getDriverById(driver.id)
+    if (verifyError) {
+      Taro.showToast({title: '网络异常，请重试', icon: 'none'})
+      return null
+    }
+
+    if (!latestDriver || !latestDriver.is_active) {
+      Taro.removeStorageSync('driver_info')
+      Taro.showModal({
+        title: '账号已停用',
+        content: '您的账号已被管理员停用，无法提交报账。请联系客服',
+        showCancel: false,
+        success: () => {
+          Taro.reLaunch({url: '/pages/login/index'})
+        }
+      })
+      return null
+    }
+
+    Taro.setStorageSync('driver_info', latestDriver)
+    return latestDriver
+  }
+
   // 点击"提交报账"：校验 → 检查车牌 → 弹确认层
   const handleSubmit = async () => {
     if (loading) return
 
-    if (!driver) {
-      Taro.showToast({title: '请先登录', icon: 'none'})
+    const activeDriver = await verifyDriverIsActive()
+    if (!activeDriver) {
       return
     }
 
@@ -189,14 +218,16 @@ function Submit() {
   // 确认后真正提交
   const handleConfirmSubmit = async () => {
     if (loading) return
-    if (!driver) {
-      Taro.showToast({title: '请先登录', icon: 'none'})
-      return
-    }
     setLoading(true)
     setShowConfirm(false)
 
     try {
+      const activeDriver = await verifyDriverIsActive()
+      if (!activeDriver) {
+        setLoading(false)
+        return
+      }
+
       // 上传所有图片
       const allImages: string[][] = []
       for (const v of vehicles) {
@@ -241,7 +272,7 @@ function Submit() {
         }
 
         return {
-          driver_id: driver.id,
+          driver_id: activeDriver.id,
           record_date: selectedDate,
           plate_number: v.plate_number,
           route: v.route || null,
