@@ -1,5 +1,5 @@
 // 车辆卡片组件
-import {Image, Input, Text, View} from '@tarojs/components'
+import {Image, Input, ScrollView, Text, View} from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import {useEffect, useState} from 'react'
 import {checkVehicleExists, searchVehicles} from '@/db/api'
@@ -46,8 +46,13 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
     if (normalizedValue.length >= 1) {
       const {data} = await searchVehicles(normalizedValue)
       console.log('搜索结果:', data.length, data.map((v) => v.plate_number))
-      setSearchResults(data.map((v) => v.plate_number).slice(0, 10))
-      setShowSearch(true)
+      if (data.length > 0) {
+        setSearchResults(data.map((v) => v.plate_number).slice(0, 10))
+        setShowSearch(true)
+      } else {
+        setSearchResults([])
+        setShowSearch(false)
+      }
     } else {
       setSearchResults([])
       setShowSearch(false)
@@ -220,25 +225,35 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                 onFocus={() => {
                   if (searchResults.length > 0) setShowSearch(true)
                 }}
-                onBlur={() => {
-                  setTimeout(() => setShowSearch(false), 300)
-                }}
               />
             </View>
             {plateValid === 'invalid' && (
               <Text className="mt-2 text-base text-orange-500">该车牌不在公司车辆库中</Text>
             )}
             {showSearch && searchResults.length > 0 && (
-              <View className="mt-2 rounded-xl border border-border bg-card overflow-hidden">
-                {searchResults.map((plate) => (
-                  <View
-                    key={plate}
-                    className="min-h-12 px-4 py-3 border-b border-border flex items-center"
-                    onClick={() => selectPlate(plate)}>
-                    {renderHighlightedPlate(plate)}
-                  </View>
-                ))}
-              </View>
+              <>
+                <View className="fixed inset-0 z-40" onClick={() => setShowSearch(false)} style={{background: 'transparent'}} />
+                <View className="relative z-50 mt-2 rounded-xl border border-border bg-card overflow-hidden">
+                  <ScrollView
+                    scrollY
+                    className="max-h-80"
+                    onTouchMove={(e) => {
+                      e.stopPropagation?.()
+                    }}>
+                    {searchResults.map((plate) => (
+                      <View
+                        key={plate}
+                        className="min-h-12 px-4 py-3 border-b border-border flex items-center"
+                        onClick={(e) => {
+                          e.stopPropagation?.()
+                          selectPlate(plate)
+                        }}>
+                        {renderHighlightedPlate(plate)}
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              </>
             )}
           </View>
 

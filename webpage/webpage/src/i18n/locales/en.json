@@ -166,7 +166,19 @@
     "batchConfirmSuccess": "Confirmed {{count}} records",
     "batchCommissionSuccess": "Filled commission for {{count}} records",
     "batchConfirmFailed": "Batch confirm failed. Please try again.",
-    "batchCommissionFailed": "Batch commission failed. Please try again."
+    "batchCommissionFailed": "Batch commission failed. Please try again.",
+    "unconfirm": "Unconfirm",
+    "unconfirmTitle": "Unconfirm Expense Record",
+    "unconfirmDescription": "After unconfirming, this record returns to \"pending\" and can be edited again.",
+    "unconfirmReason": "Unconfirm Reason",
+    "unconfirmReasonRequired": "Please provide a reason for unconfirming",
+    "unconfirmReasonPlaceholder": "For example: wrong amount entered, receipt image missing, driver requested route correction",
+    "unconfirmWarning": "This action will be recorded in the audit log. Please provide a clear reason.",
+    "confirmUnconfirm": "Confirm Unconfirm",
+    "unconfirmSuccess": "Record unconfirmed and moved back to pending",
+    "unconfirmFailed": "Failed to unconfirm. Please try again.",
+    "confirmedLocked": "Confirmed (locked)",
+    "confirmedLockedTip": "Confirmed records cannot be edited. Contact an admin to unconfirm first."
   },
   "summary": {
     "title": "Summary",
@@ -245,6 +257,7 @@
     "fieldImmutableHint": "Field name cannot be changed after creation. Use a fee_ prefix.",
     "otherProtected": "\"Other\" cannot be disabled or deleted",
     "otherCannotDisable": "\"Other\" cannot be disabled",
+    "otherCannotDisableTip": "\"Other\" is a built-in system type and cannot be disabled or deleted. Drivers can freely enter a custom fee name under \"Other\".",
     "dbFieldRequired": "After adding a fee type, add the matching database field before use"
   },
   "staff": {
@@ -370,8 +383,11 @@
     "templateListDescription": "Built-in templates are available for quick reuse and modification by support or legal staff.",
     "templateDescription": "Templates support scrolling and one-click copy, and can be refined by business scenario.",
     "copyTemplate": "Copy Template",
+    "copyAllContent": "Copy Full Template",
+    "copied": "Copied to clipboard",
     "templateCopied": "Template copied",
     "copyFailed": "Copy failed. Please select the text manually.",
+    "doubleClickToSelectAll": "Double-click to select all content",
     "noTemplates": "No templates available"
   },
   "editExpense": {

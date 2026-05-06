@@ -11,8 +11,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { RefreshCw, Inbox } from 'lucide-react';
-import { getExpenseRecords, getAllDrivers, confirmExpenseRecord, batchConfirmExpenseRecords, batchUpdateCommission, createOperationLog } from '@/db/api';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RefreshCw, Inbox, RotateCcw, AlertCircle } from 'lucide-react';
+import { getExpenseRecords, getAllDrivers, confirmExpenseRecord, unconfirmExpenseRecord, batchConfirmExpenseRecords, batchUpdateCommission, createOperationLog } from '@/db/api';
 import type { ExpenseRecordWithDriver, Driver } from '@/types/database';
 import { format, startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
@@ -22,7 +25,7 @@ import { useTranslation } from 'react-i18next';
 
 const ExpensesPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [records, setRecords] = useState<ExpenseRecordWithDriver[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -32,13 +35,17 @@ const ExpensesPage: React.FC = () => {
   const [batchCommissionDialogOpen, setBatchCommissionDialogOpen] = useState(false);
   const [batchCommission, setBatchCommission] = useState('');
   const [activeRecord, setActiveRecord] = useState<ExpenseRecordWithDriver | null>(null);
+  const [unconfirmDialogOpen, setUnconfirmDialogOpen] = useState(false);
+  const [unconfirmRecordId, setUnconfirmRecordId] = useState<number | null>(null);
+  const [unconfirmReason, setUnconfirmReason] = useState('');
+  const [unconfirming, setUnconfirming] = useState(false);
 
   // 筛选条件
   const [filters, setFilters] = useState({
     driverId: searchParams.get('driverId') || '',
     startDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd'),
-    status: 'pending',
+    status: '',
   });
 
   useEffect(() => {
@@ -142,6 +149,42 @@ const ExpensesPage: React.FC = () => {
     } catch (error) {
       console.error('批量填写提成失败:', error);
       toast.error(t('expenses.batchCommissionFailed'));
+    }
+  };
+
+  const handleOpenUnconfirm = (id: number) => {
+    setUnconfirmRecordId(id);
+    setUnconfirmReason('');
+    setUnconfirmDialogOpen(true);
+  };
+
+  const handleConfirmUnconfirm = async () => {
+    if (!unconfirmRecordId || !user) return;
+    if (!unconfirmReason.trim()) {
+      toast.error(t('expenses.unconfirmReasonRequired'));
+      return;
+    }
+
+    setUnconfirming(true);
+    try {
+      await unconfirmExpenseRecord(unconfirmRecordId, user.username || user.name, unconfirmReason.trim());
+      await createOperationLog({
+        operator_id: user.id,
+        operator_name: user.name,
+        action: 'update',
+        target_type: 'expense_record',
+        target_id: unconfirmRecordId,
+        detail: `反审核报账记录，原因：${unconfirmReason.trim()}`,
+      });
+      toast.success(t('expenses.unconfirmSuccess'));
+      setUnconfirmDialogOpen(false);
+      setUnconfirmRecordId(null);
+      await loadRecords();
+    } catch (error) {
+      console.error('反审核失败:', error);
+      toast.error(t('expenses.unconfirmFailed'));
+    } finally {
+      setUnconfirming(false);
     }
   };
 
@@ -272,7 +315,7 @@ const ExpensesPage: React.FC = () => {
                     <TableHead className="w-[72px] whitespace-nowrap text-right px-1">{t('expenses.expense')}</TableHead>
                     <TableHead className="w-[64px] whitespace-nowrap text-right px-1">{t('expenses.commission')}</TableHead>
                     <TableHead className="w-[64px] whitespace-nowrap px-1">{t('common.status')}</TableHead>
-                    <TableHead className="w-[78px] whitespace-nowrap px-1">{t('common.actions')}</TableHead>
+                    <TableHead className="w-[220px] whitespace-nowrap px-1">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -317,14 +360,41 @@ const ExpensesPage: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell className="px-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 text-xs"
-                            onClick={() => setActiveRecord(record)}
-                          >
-                            {t('common.view')}
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => setActiveRecord(record)}
+                            >
+                              {t('common.view')}
+                            </Button>
+                            {record.status === 'confirmed' && isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs text-orange-600 hover:bg-orange-50"
+                                onClick={() => handleOpenUnconfirm(record.id)}
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                                {t('expenses.unconfirm')}
+                              </Button>
+                            )}
+                            {record.status === 'confirmed' && !isAdmin && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-xs text-muted-foreground italic cursor-help">
+                                      {t('expenses.confirmedLocked')}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{t('expenses.confirmedLockedTip')}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -392,6 +462,42 @@ const ExpensesPage: React.FC = () => {
               {t('common.cancel')}
             </Button>
             <Button onClick={handleBatchCommission}>{t('common.confirm')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={unconfirmDialogOpen} onOpenChange={setUnconfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('expenses.unconfirmTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">{t('expenses.unconfirmDescription')}</p>
+            <div className="space-y-2">
+              <Label>{t('expenses.unconfirmReason')} *</Label>
+              <Textarea
+                value={unconfirmReason}
+                onChange={(e) => setUnconfirmReason(e.target.value)}
+                placeholder={t('expenses.unconfirmReasonPlaceholder')}
+                rows={3}
+              />
+            </div>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{t('expenses.unconfirmWarning')}</AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnconfirmDialogOpen(false)} disabled={unconfirming}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmUnconfirm}
+              disabled={unconfirming || !unconfirmReason.trim()}
+            >
+              {unconfirming ? t('common.loading') : t('expenses.confirmUnconfirm')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

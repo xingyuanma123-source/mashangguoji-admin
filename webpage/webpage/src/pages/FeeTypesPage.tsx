@@ -13,6 +13,7 @@ import type { FeeType } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const FeeTypesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -201,15 +202,37 @@ const FeeTypesPage: React.FC = () => {
                               <Edit className="h-4 w-4 mr-1" />
                               {t('common.edit')}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleToggleActive(feeType)}
-                              disabled={feeType.field_name === 'other'}
-                            >
-                              <Power className="h-4 w-4 mr-1" />
-                              {feeType.is_active ? t('common.disabled') : t('common.enabled')}
-                            </Button>
+                            {feeType.field_name === 'other' ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span tabIndex={0}>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled
+                                        className="opacity-50 cursor-not-allowed"
+                                      >
+                                        <Power className="h-4 w-4 mr-1" />
+                                        {t('common.disabled')}
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{t('feeTypes.otherCannotDisableTip')}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleToggleActive(feeType)}
+                              >
+                                <Power className="h-4 w-4 mr-1" />
+                                {feeType.is_active ? t('common.disabled') : t('common.enabled')}
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

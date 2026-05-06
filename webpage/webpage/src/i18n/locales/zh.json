@@ -166,7 +166,19 @@
     "batchConfirmSuccess": "成功确认 {{count}} 条记录",
     "batchCommissionSuccess": "成功填写 {{count}} 条记录的提成",
     "batchConfirmFailed": "批量确认失败，请重试",
-    "batchCommissionFailed": "批量填写提成失败，请重试"
+    "batchCommissionFailed": "批量填写提成失败，请重试",
+    "unconfirm": "反审核",
+    "unconfirmTitle": "反审核报账记录",
+    "unconfirmDescription": "反审核后，这条记录会回到\"未确认\"状态，可以重新编辑。",
+    "unconfirmReason": "反审核原因",
+    "unconfirmReasonRequired": "请填写反审核原因",
+    "unconfirmReasonPlaceholder": "例如：金额录入错误、需补充凭证图片、司机要求修改路线等",
+    "unconfirmWarning": "操作会被记录到审计日志。请认真填写原因。",
+    "confirmUnconfirm": "确认反审核",
+    "unconfirmSuccess": "已反审核，记录回到未确认状态",
+    "unconfirmFailed": "反审核失败，请重试",
+    "confirmedLocked": "已确认（不可改）",
+    "confirmedLockedTip": "已确认的记录无法修改。如需修改请联系管理员（admin）反审核。"
   },
   "summary": {
     "title": "总表",
@@ -245,6 +257,7 @@
     "fieldImmutableHint": "字段名创建后不可修改，建议使用 fee_ 开头",
     "otherProtected": "\"其他\"类型不可停用或删除",
     "otherCannotDisable": "\"其他\"类型不可停用",
+    "otherCannotDisableTip": "「其他」是系统内置类型，不可停用或删除。司机使用「其他」字段时可以自由填写费用名称。",
     "dbFieldRequired": "新增费用类型后，需要在数据库中添加对应字段才能使用"
   },
   "staff": {
@@ -370,8 +383,11 @@
     "templateListDescription": "模板先以内置内容提供，便于客服或法务快速复用和修改。",
     "templateDescription": "模板内容支持滚动查看和一键复制，可按业务场景继续细化。",
     "copyTemplate": "复制模板",
+    "copyAllContent": "一键复制全文",
+    "copied": "已复制到剪贴板",
     "templateCopied": "模板内容已复制",
     "copyFailed": "复制失败，请手动选择文本",
+    "doubleClickToSelectAll": "双击可全选内容",
     "noTemplates": "暂无可用模板"
   },
   "editExpense": {

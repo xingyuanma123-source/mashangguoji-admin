@@ -413,6 +413,27 @@ export async function confirmExpenseRecord(id: number, confirmedBy: string) {
   if (error) throw error;
 }
 
+/**
+ * 反审核：将已确认的报账记录退回未确认状态
+ */
+export async function unconfirmExpenseRecord(id: number, unconfirmedBy: string, reason: string) {
+  const { error } = await supabase
+    .from('expense_records')
+    .update({
+      status: 'pending',
+      confirmed_by: null,
+      confirmed_at: null,
+      unconfirmed_at: new Date().toISOString(),
+      unconfirmed_by: unconfirmedBy,
+      unconfirm_reason: reason,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('status', 'confirmed');
+
+  if (error) throw error;
+}
+
 export async function batchConfirmExpenseRecords(ids: number[], confirmedBy: string) {
   const { error } = await supabase
     .from('expense_records')

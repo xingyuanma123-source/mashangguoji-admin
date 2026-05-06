@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Copy, FileText } from 'lucide-react';
+import { type MouseEvent, useMemo, useState } from 'react';
+import { Check, Copy, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -124,6 +124,7 @@ const CONTRACT_TEMPLATES: ContractTemplateItem[] = [
 const ContractTemplates = () => {
   const { t } = useTranslation();
   const [activeTemplateKey, setActiveTemplateKey] = useState(CONTRACT_TEMPLATES[0]?.key ?? '');
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
 
   const activeTemplate = useMemo(
     () => CONTRACT_TEMPLATES.find((item) => item.key === activeTemplateKey) ?? CONTRACT_TEMPLATES[0],
@@ -137,11 +138,21 @@ const ContractTemplates = () => {
 
     try {
       await navigator.clipboard.writeText(activeTemplate.content);
+      setCopyStatus('copied');
       toast.success(t('legal.templateCopied'));
+      setTimeout(() => setCopyStatus('idle'), 3000);
     } catch (error) {
       console.error('复制模板失败:', error);
       toast.error(t('legal.copyFailed'));
     }
+  };
+
+  const handleDoubleClickContent = (e: MouseEvent<HTMLPreElement>) => {
+    const range = document.createRange();
+    range.selectNodeContents(e.currentTarget);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
   };
 
   return (
@@ -174,16 +185,35 @@ const ContractTemplates = () => {
               <CardTitle>{activeTemplate?.title ?? t('legal.contractTemplates')}</CardTitle>
               <CardDescription>{t('legal.templateDescription')}</CardDescription>
             </div>
-            <Button variant="outline" onClick={handleCopy} disabled={!activeTemplate}>
-              <Copy className="h-4 w-4" />
-              {t('legal.copyTemplate')}
+            <Button
+              variant="default"
+              size="default"
+              onClick={handleCopy}
+              disabled={!activeTemplate}
+              className="gap-2"
+            >
+              {copyStatus === 'copied' ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  {t('legal.copied')}
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  {t('legal.copyAllContent')}
+                </>
+              )}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
           {activeTemplate ? (
             <ScrollArea className="h-[620px] rounded-lg border bg-background">
-              <pre className="whitespace-pre-wrap px-5 py-4 text-sm leading-7 text-foreground">
+              <pre
+                className="whitespace-pre-wrap px-5 py-4 text-sm leading-7 text-foreground cursor-text select-text"
+                onDoubleClick={handleDoubleClickContent}
+                title={t('legal.doubleClickToSelectAll')}
+              >
                 {activeTemplate.content}
               </pre>
             </ScrollArea>
