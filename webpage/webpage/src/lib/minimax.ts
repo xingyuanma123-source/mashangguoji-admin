@@ -3,7 +3,7 @@ export type MiniMaxMessage = {
   content: string;
 };
 
-const MINIMAX_MODEL = 'qwen/qwen3.5-122b-a10b';
+const MINIMAX_MODEL = 'qwen/qwen3.5-397b-a17b';
 const MINIMAX_ENDPOINT = '/api/nvidia/chat/completions';
 
 function getMiniMaxApiKey() {
