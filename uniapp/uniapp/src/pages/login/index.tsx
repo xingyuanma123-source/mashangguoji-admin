@@ -11,6 +11,10 @@ function Login() {
   const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const openLegal = (type: 'agreement' | 'privacy') => {
+    Taro.navigateTo({url: `/pages/legal/index?type=${type}`})
+  }
+
   const handleLogin = async () => {
     if (!username.trim()) {
       Taro.showToast({
@@ -99,6 +103,7 @@ function Login() {
                   <Input
                     className="w-full text-foreground text-xl"
                     placeholder="请输入账号"
+                    ariaLabel="账号"
                     value={username}
                     onInput={(e) => setUsername(e.detail.value)}
                   />
@@ -111,6 +116,7 @@ function Login() {
                   <Input
                     className="w-full text-foreground text-xl"
                     placeholder="请输入密码"
+                    ariaLabel="密码"
                     password
                     value={password}
                     onInput={(e) => setPassword(e.detail.value)}
@@ -118,16 +124,40 @@ function Login() {
                 </View>
               </View>
 
-              <View className="flex flex-row items-center" onClick={() => setAgreed(!agreed)}>
+              <View className="flex flex-row items-start">
                 <View
-                  className={`w-6 h-6 rounded border-2 flex items-center justify-center mr-3 flex-shrink-0 ${
-                    agreed ? 'bg-primary border-primary' : 'bg-background border-border'
-                  }`}>
-                  {agreed && <View className="i-mdi-check text-primary-foreground text-xl" />}
+                  className="h-11 w-11 -ml-2 flex items-center justify-center flex-shrink-0"
+                  role="checkbox"
+                  ariaRole="checkbox"
+                  ariaLabel={agreed ? '已同意用户协议和隐私政策，点击取消同意' : '未同意用户协议和隐私政策，点击同意'}
+                  onClick={() => setAgreed(!agreed)}>
+                  <View
+                    className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                      agreed ? 'bg-primary border-primary' : 'bg-background border-border'
+                    }`}>
+                    {agreed && <View className="i-mdi-check text-primary-foreground text-xl" />}
+                  </View>
                 </View>
-                <Text className="text-lg text-muted-foreground" style={{whiteSpace: 'nowrap'}}>
-                  我已阅读并同意《用户协议》和《隐私政策》
-                </Text>
+                <View className="flex-1 flex flex-row flex-wrap items-center pt-2">
+                  <Text className="text-lg text-muted-foreground">我已阅读并同意</Text>
+                  <View
+                    className="inline-flex"
+                    role="link"
+                    ariaRole="link"
+                    ariaLabel="查看用户协议"
+                    onClick={() => openLegal('agreement')}>
+                    <Text className="text-lg text-primary">《用户协议》</Text>
+                  </View>
+                  <Text className="text-lg text-muted-foreground">和</Text>
+                  <View
+                    className="inline-flex"
+                    role="link"
+                    ariaRole="link"
+                    ariaLabel="查看隐私政策"
+                    onClick={() => openLegal('privacy')}>
+                    <Text className="text-lg text-primary">《隐私政策》</Text>
+                  </View>
+                </View>
               </View>
 
               <Button

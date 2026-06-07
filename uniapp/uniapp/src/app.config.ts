@@ -3,6 +3,7 @@ const pages = [
   'pages/records/index',
   'pages/profile/index',
   'pages/login/index',
+  'pages/legal/index',
   'pages/record-detail/index',
   'pages/record-edit/index'
 ]

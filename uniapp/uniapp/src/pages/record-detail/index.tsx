@@ -195,6 +195,7 @@ function RecordDetail() {
                     src={getImageUrl(img)}
                     className="w-32 h-32 rounded-xl"
                     mode="aspectFill"
+                    ariaLabel={`预览第${index + 1}张凭证图片`}
                     onClick={() => previewImage(index)}
                   />
                 ))}
