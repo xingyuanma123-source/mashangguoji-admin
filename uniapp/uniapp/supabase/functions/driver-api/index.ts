@@ -333,6 +333,50 @@ async function handleFundStats(driverId: number, body: any): Promise<Response> {
   })
 }
 
+// ---------- 合并接口（减少往返）----------
+// 记录页：一次返回 records + stats（含 overtime_count），只查一次库
+async function handleRecordsPage(driverId: number, body: any): Promise<Response> {
+  const { start, end } = monthRange(Number(body.year), Number(body.month))
+  const records = await pgRows(
+    `/expense_records?select=*&driver_id=eq.${driverId}&record_date=gte.${start}&record_date=lt.${end}&order=record_date.desc,created_at.desc`,
+  )
+  const overtimeDates = new Set<string>()
+  for (const r of records) if (r.status === 'confirmed' && r.is_overtime) overtimeDates.add(r.record_date)
+  const stats = {
+    total_expense: records.reduce((s: number, r: any) => s + num(r.total_expense), 0),
+    total_commission: records.reduce((s: number, r: any) => s + num(r.commission), 0),
+    overtime_count: overtimeDates.size,
+    pending_count: records.filter((r: any) => r.status === 'pending').length,
+    confirmed_count: records.filter((r: any) => r.status === 'confirmed').length,
+  }
+  return json({ data: { records, stats } })
+}
+
+// 我的页：一次返回 fund + overtime_count
+async function handleProfileSummary(driverId: number, body: any): Promise<Response> {
+  const { start, end } = monthRange(Number(body.year), Number(body.month))
+  const fundRows = await pgRows(
+    `/advance_fund_records?select=*&driver_id=eq.${driverId}&fund_date=gte.${start}&fund_date=lt.${end}&order=fund_date.asc`,
+  )
+  const expRows = await pgRows(
+    `/expense_records?select=record_date,total_expense,is_overtime&driver_id=eq.${driverId}&status=eq.confirmed&record_date=gte.${start}&record_date=lt.${end}&order=record_date.asc`,
+  )
+  const totalRecharge = fundRows.reduce((s: number, r: any) => s + num(r.amount), 0)
+  const totalExpense = expRows.reduce((s: number, r: any) => s + num(r.total_expense), 0)
+  const recordsList = [
+    ...fundRows.map((r: any) => ({ date: r.fund_date, type: 'recharge', amount: num(r.amount), description: r.note || '充值' })),
+    ...expRows.map((r: any) => ({ date: r.record_date, type: 'expense', amount: num(r.total_expense), description: '支出' })),
+  ].sort((a, b) => String(a.date).localeCompare(String(b.date)))
+  const overtimeDates = new Set<string>()
+  for (const r of expRows) if (r.is_overtime) overtimeDates.add(r.record_date)
+  return json({
+    data: {
+      fund: { total_recharge: totalRecharge, total_expense: totalExpense, balance: totalRecharge - totalExpense, records: recordsList },
+      overtime_count: overtimeDates.size,
+    },
+  })
+}
+
 // ---------- 路由 ----------
 function getToken(req: Request): string | null {
   const direct = req.headers.get('x-driver-token')
@@ -363,6 +407,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (req.method === 'GET' && path.endsWith('/driver/me')) return await handleMe(driverId)
 
     const body = await safeJson(req)
+    if (req.method === 'POST' && path.endsWith('/records/page')) return await handleRecordsPage(driverId, body)
+    if (req.method === 'POST' && path.endsWith('/profile/summary')) return await handleProfileSummary(driverId, body)
     if (req.method === 'POST' && path.endsWith('/records/create')) return await handleCreateRecords(driverId, body)
     if (req.method === 'POST' && path.endsWith('/records/by-month')) return await handleByMonth(driverId, body)
     if (req.method === 'POST' && path.endsWith('/records/get')) return await handleGetRecord(driverId, body)

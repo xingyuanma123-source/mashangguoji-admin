@@ -200,11 +200,12 @@ function Submit() {
   }
 
   // 点击"提交报账"：校验 → 检查车牌 → 弹确认层
+  // 注：司机停用的权威校验放在"确认提交"前（handleConfirmSubmit），此处不再重复请求，省一次往返
   const handleSubmit = async () => {
     if (loading) return
 
-    const activeDriver = await verifyDriverIsActive()
-    if (!activeDriver) {
+    if (!driver) {
+      Taro.showToast({title: '请先登录', icon: 'none'})
       return
     }
 

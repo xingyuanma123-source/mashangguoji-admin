@@ -6,7 +6,7 @@ import {useAuth} from '@/contexts/AuthContext'
 import {withRouteGuard} from '@/components/RouteGuard'
 import LoadErrorBanner from '@/components/LoadErrorBanner'
 import type {FundStats} from '@/db/types'
-import {getFundStats, getOvertimeCount} from '@/db/api'
+import {getProfileSummary} from '@/db/api'
 
 function Profile() {
   const {driver, signOut} = useAuth()
@@ -32,20 +32,18 @@ function Profile() {
 
     const [year, month] = selectedMonth.split('-').map(Number)
 
-    const [fundRes, overtimeRes] = await Promise.all([
-      getFundStats(driver.id, year, month),
-      getOvertimeCount(driver.id, year, month)
-    ])
+    // 合并接口：一次拿回 备用金 + 加班次数
+    const {data, error} = await getProfileSummary(driver.id, year, month)
 
-    // 任一接口失败：保留上次成功的数据，标记加载失败，不用零值覆盖
-    if (fundRes.error || overtimeRes.error) {
+    if (error) {
+      // 失败：保留上次成功的数据，标记加载失败，不用零值覆盖
       setLoadError(true)
       return false
     }
 
     setLoadError(false)
-    setFundStats(fundRes.data)
-    setOvertimeCount(overtimeRes.count)
+    setFundStats(data.fund)
+    setOvertimeCount(data.overtime_count)
     return true
   }, [driver, selectedMonth])
 

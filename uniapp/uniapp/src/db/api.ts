@@ -164,3 +164,31 @@ export async function getFundStats(_driverId: number, year: number, month: numbe
   if (error) return {data: fallback, error}
   return {data: (data?.data ?? fallback) as FundStats, error: null}
 }
+
+// ==================== 合并接口（减少往返，提升速度）====================
+
+/** 记录页：一次返回 records + stats（含 overtime_count） */
+export async function getRecordsPage(_driverId: number, year: number, month: number) {
+  const fallback = {
+    records: [] as ExpenseRecord[],
+    stats: {total_expense: 0, total_commission: 0, overtime_count: 0, pending_count: 0, confirmed_count: 0} as MonthlyStats
+  }
+  const {data, error} = await callEdge<{data: {records: ExpenseRecord[]; stats: MonthlyStats}}>('/records/page', {
+    body: {year, month}
+  })
+  if (error) return {data: fallback, error}
+  return {data: (data?.data ?? fallback), error: null}
+}
+
+/** 我的页：一次返回 fund + overtime_count */
+export async function getProfileSummary(_driverId: number, year: number, month: number) {
+  const fallback = {
+    fund: {total_recharge: 0, total_expense: 0, balance: 0, records: []} as FundStats,
+    overtime_count: 0
+  }
+  const {data, error} = await callEdge<{data: {fund: FundStats; overtime_count: number}}>('/profile/summary', {
+    body: {year, month}
+  })
+  if (error) return {data: fallback, error}
+  return {data: (data?.data ?? fallback), error: null}
+}

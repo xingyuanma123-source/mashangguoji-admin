@@ -6,7 +6,7 @@ import {useAuth} from '@/contexts/AuthContext'
 import {withRouteGuard} from '@/components/RouteGuard'
 import LoadErrorBanner from '@/components/LoadErrorBanner'
 import type {ExpenseRecord, MonthlyStats} from '@/db/types'
-import {getExpenseRecordsByMonth, getMonthlyStats, getOvertimeCount, deleteExpenseRecord} from '@/db/api'
+import {getRecordsPage, deleteExpenseRecord} from '@/db/api'
 
 function Records() {
   const {driver} = useAuth()
@@ -36,25 +36,19 @@ function Records() {
 
     const [year, month] = selectedMonth.split('-').map(Number)
 
-    const [recordsRes, statsRes, overtimeRes] = await Promise.all([
-      getExpenseRecordsByMonth(driver.id, year, month),
-      getMonthlyStats(driver.id, year, month),
-      getOvertimeCount(driver.id, year, month)
-    ])
+    // 合并接口：一次拿回 records + stats（含加班次数）
+    const {data, error} = await getRecordsPage(driver.id, year, month)
 
-    // 任一接口失败：保留上次成功的数据，标记加载失败，不用空/零覆盖
-    if (recordsRes.error || statsRes.error || overtimeRes.error) {
+    if (error) {
+      // 失败：保留上次成功的数据，标记加载失败，不用空/零覆盖
       setLoadError(true)
       setLoading(false)
       return false
     }
 
     setLoadError(false)
-    setRecords(recordsRes.data)
-    setStats({
-      ...statsRes.data,
-      overtime_count: overtimeRes.count
-    })
+    setRecords(data.records)
+    setStats(data.stats)
     setLoading(false)
     return true
   }, [driver, selectedMonth])
