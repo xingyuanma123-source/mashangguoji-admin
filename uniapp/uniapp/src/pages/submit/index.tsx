@@ -109,7 +109,7 @@ function Submit() {
     setVehicles(newVehicles)
   }
 
-  const deleteVehicle = (index: number) => {
+  const removeVehicle = (index: number) => {
     const newVehicles = vehicles.filter((_, i) => i !== index)
     setVehicles(newVehicles)
     setActiveVehicleIndex((prev) => {
@@ -117,6 +117,26 @@ function Submit() {
       if (index < prev) return prev - 1
       if (index === prev) return Math.max(0, prev - 1)
       return prev
+    })
+  }
+
+  const deleteVehicle = (index: number) => {
+    const v = vehicles[index]
+    // 空白车辆（无车牌、无费用、无图片）没什么可丢，直接删不打扰
+    const isEmpty = !v || (!v.plate_number.trim() && v.fee_items.length === 0 && v.receipt_images.length === 0)
+    if (isEmpty) {
+      removeVehicle(index)
+      return
+    }
+
+    Taro.showModal({
+      title: '删除车辆',
+      content: `确定删除${v.plate_number.trim() || '这辆车'}吗？车牌、费用、图片都会一起清空。`,
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) removeVehicle(index)
+      }
     })
   }
 
