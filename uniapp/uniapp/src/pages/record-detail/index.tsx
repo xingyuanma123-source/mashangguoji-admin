@@ -12,6 +12,7 @@ function RecordDetail() {
   const [record, setRecord] = useState<ExpenseRecord | null>(null)
   const [otherFees, setOtherFees] = useState<OtherFeeItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   const renderFeeItem = useCallback(
     (label: string, amount: number) => {
@@ -53,13 +54,22 @@ function RecordDetail() {
     }
 
     setLoading(true)
+    setLoadError(false)
     const recordId = Number(id)
-    const [{data}, {data: otherFeesData}] = await Promise.all([
+    const [recordRes, otherFeesRes] = await Promise.all([
       getExpenseRecordById(recordId),
       fetchOtherFees(recordId)
     ])
-    setRecord(data)
-    setOtherFees(otherFeesData)
+
+    // 加载失败：标记错误，不要当成"记录不存在"
+    if (recordRes.error || otherFeesRes.error) {
+      setLoadError(true)
+      setLoading(false)
+      return
+    }
+
+    setRecord(recordRes.data)
+    setOtherFees(otherFeesRes.data)
     setLoading(false)
   }, [])
 
@@ -85,6 +95,23 @@ function RecordDetail() {
       <View className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center">
         <View className="i-mdi-loading animate-spin text-primary text-6xl mb-4" />
         <Text className="text-xl text-muted-foreground">加载中...</Text>
+      </View>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <View className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center px-8">
+        <View className="i-mdi-cloud-alert-outline text-destructive text-6xl mb-4" />
+        <Text className="text-2xl text-muted-foreground mb-5">加载失败，请检查网络</Text>
+        <View
+          className="rounded-xl bg-primary px-8 py-3"
+          role="button"
+          ariaRole="button"
+          ariaLabel="重试加载"
+          onClick={loadData}>
+          <Text className="text-lg text-primary-foreground font-medium">重试</Text>
+        </View>
       </View>
     )
   }

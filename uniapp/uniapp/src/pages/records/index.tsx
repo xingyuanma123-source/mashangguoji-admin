@@ -4,6 +4,7 @@ import {useState, useEffect, useCallback} from 'react'
 import Taro, {useDidShow} from '@tarojs/taro'
 import {useAuth} from '@/contexts/AuthContext'
 import {withRouteGuard} from '@/components/RouteGuard'
+import LoadErrorBanner from '@/components/LoadErrorBanner'
 import type {ExpenseRecord, MonthlyStats} from '@/db/types'
 import {getExpenseRecordsByMonth, getMonthlyStats, getOvertimeCount, deleteExpenseRecord} from '@/db/api'
 
@@ -19,6 +20,7 @@ function Records() {
     confirmed_count: 0
   })
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   // 初始化为当月
   useEffect(() => {
@@ -28,26 +30,33 @@ function Records() {
   }, [])
 
   const loadData = useCallback(async () => {
-    if (!driver || !selectedMonth) return
+    if (!driver || !selectedMonth) return false
 
     setLoading(true)
 
     const [year, month] = selectedMonth.split('-').map(Number)
 
-    // 加载记录
-    const {data: recordsData} = await getExpenseRecordsByMonth(driver.id, year, month)
-    setRecords(recordsData)
+    const [recordsRes, statsRes, overtimeRes] = await Promise.all([
+      getExpenseRecordsByMonth(driver.id, year, month),
+      getMonthlyStats(driver.id, year, month),
+      getOvertimeCount(driver.id, year, month)
+    ])
 
-    // 加载统计
-    const {data: statsData} = await getMonthlyStats(driver.id, year, month)
-    const {count: overtimeCount} = await getOvertimeCount(driver.id, year, month)
+    // 任一接口失败：保留上次成功的数据，标记加载失败，不用空/零覆盖
+    if (recordsRes.error || statsRes.error || overtimeRes.error) {
+      setLoadError(true)
+      setLoading(false)
+      return false
+    }
 
+    setLoadError(false)
+    setRecords(recordsRes.data)
     setStats({
-      ...statsData,
-      overtime_count: overtimeCount
+      ...statsRes.data,
+      overtime_count: overtimeRes.count
     })
-
     setLoading(false)
+    return true
   }, [driver, selectedMonth])
 
   useDidShow(() => {
@@ -63,10 +72,10 @@ function Records() {
   }
 
   const handleRefresh = async () => {
-    await loadData()
+    const ok = await loadData()
     Taro.showToast({
-      title: '刷新成功',
-      icon: 'success'
+      title: ok ? '刷新成功' : '刷新失败，请重试',
+      icon: ok ? 'success' : 'none'
     })
   }
 
@@ -119,6 +128,7 @@ function Records() {
     <View className="page-shell">
       <ScrollView className="w-full" scrollY onScrollToUpper={handleRefresh}>
         <View className="px-4 py-5">
+          {loadError && <LoadErrorBanner onRetry={loadData} />}
           <View className="surface-card p-4 mb-4">
             <View className="flex flex-row items-center justify-between mb-3">
               <Text className="text-xl font-semibold text-foreground">报账记录</Text>
@@ -164,7 +174,7 @@ function Records() {
             </View>
           )}
 
-          {!loading && records.length === 0 && (
+          {!loading && !loadError && records.length === 0 && (
             <View className="surface-card py-10 flex flex-col items-center">
               <View className="i-mdi-file-document-outline text-muted-foreground text-5xl mb-3" />
               <Text className="text-base text-muted-foreground">暂无记录</Text>
