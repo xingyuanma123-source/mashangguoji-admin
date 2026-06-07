@@ -480,7 +480,6 @@ function Submit() {
               card={currentVehicle}
               feeTypes={feeTypes}
               onChange={(card) => updateVehicle(activeVehicleIndex, card)}
-              onDelete={() => deleteVehicle(activeVehicleIndex)}
             />
           )}
         </View>

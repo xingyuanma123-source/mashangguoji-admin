@@ -11,15 +11,13 @@ interface VehicleCardProps {
   card: VehicleCard
   feeTypes: FeeType[]
   onChange: (card: VehicleCard) => void
-  onDelete: () => void
 }
 
-export default function VehicleCardComponent({card, feeTypes, onChange, onDelete}: VehicleCardProps) {
+export default function VehicleCardComponent({card, feeTypes, onChange}: VehicleCardProps) {
   const [plateSearch, setPlateSearch] = useState('')
   const [searchResults, setSearchResults] = useState<string[]>([])
   const [showSearch, setShowSearch] = useState(false)
   const [plateValid, setPlateValid] = useState<'valid' | 'invalid' | 'unknown'>('unknown')
-  const [collapsed, setCollapsed] = useState(false)
 
   const normalizePlateKeyword = (value: string) => value.replace(/\s+/g, '').trim().toUpperCase()
 
@@ -219,43 +217,15 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
   return (
     <View className="surface-card p-4 mb-4">
       <View className="flex flex-row items-center justify-between">
-        <View
-          className="flex-1"
-          role="button"
-          ariaRole="button"
-          ariaLabel={collapsed ? '展开车辆信息' : '收起车辆信息'}
-          onClick={() => setCollapsed(!collapsed)}>
+        <View className="flex-1">
           <Text className="text-xl font-semibold text-foreground">{card.plate_number || '车辆信息'}</Text>
           <View className="mt-1 inline-flex soft-chip px-3 py-1">
             <Text className="text-base text-primary">小计 ¥{card.total.toFixed(2)}</Text>
           </View>
         </View>
-
-        <View className="flex flex-row items-center gap-2">
-          <View
-            className="h-11 w-11 rounded-full bg-destructive/10 flex items-center justify-center"
-            role="button"
-            ariaRole="button"
-            ariaLabel={`删除${card.plate_number || '当前车辆'}`}
-            onClick={(e) => {
-              e.stopPropagation?.()
-              onDelete()
-            }}>
-            <View className="i-mdi-delete text-destructive text-xl" />
-          </View>
-          <View
-            className="h-11 w-11 rounded-full bg-muted flex items-center justify-center"
-            role="button"
-            ariaRole="button"
-            ariaLabel={collapsed ? '展开车辆信息' : '收起车辆信息'}
-            onClick={() => setCollapsed(!collapsed)}>
-            <View className={`${collapsed ? 'i-mdi-chevron-down' : 'i-mdi-chevron-up'} text-muted-foreground text-xl`} />
-          </View>
-        </View>
       </View>
 
-      {!collapsed && (
-        <View className="mt-4 flex flex-col gap-4">
+      <View className="mt-4 flex flex-col gap-4">
           <View>
             <Text className="text-base text-muted-foreground mb-2 block">车牌号</Text>
             <View className={`rounded-xl border-2 ${borderColor} bg-background px-3 py-3`}>
@@ -446,8 +416,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
             <Text className="text-base text-foreground font-medium">本车费用小计</Text>
             <Text className="text-xl font-bold text-primary">¥{card.total.toFixed(2)}</Text>
           </View>
-        </View>
-      )}
+      </View>
     </View>
   )
 }
