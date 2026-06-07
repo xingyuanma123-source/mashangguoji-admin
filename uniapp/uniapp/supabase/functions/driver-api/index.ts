@@ -180,6 +180,15 @@ async function handleCreateRecords(driverId: number, body: any): Promise<Respons
   const records = Array.isArray(body?.records) ? body.records : []
   if (records.length === 0) return json({ error: '没有要提交的记录' }, 400)
 
+  // 幂等：同一提交键已处理过（弱网超时重试）→ 直接返回上次结果，不重复插入
+  const idemKey = typeof body?.idempotency_key === 'string' && body.idempotency_key ? body.idempotency_key : null
+  if (idemKey) {
+    const existing = await pgRows(
+      `/expense_records?select=*&driver_id=eq.${driverId}&idempotency_key=eq.${idemKey}&order=id.asc`,
+    )
+    if (existing.length > 0) return json({ data: existing, idempotent: true })
+  }
+
   const payload = records.map((r: any) => ({
     ...buildRecordFields(r),
     driver_id: driverId, // 强制为登录司机
@@ -187,6 +196,7 @@ async function handleCreateRecords(driverId: number, body: any): Promise<Respons
     status: 'pending',
     confirmed_by: null,
     confirmed_at: null,
+    idempotency_key: idemKey,
   }))
 
   const insertResp = await pg('/expense_records', {
@@ -377,6 +387,66 @@ async function handleProfileSummary(driverId: number, body: any): Promise<Respon
   })
 }
 
+// ---------- 存储：私有收据图片签名链接 ----------
+const RECEIPT_BUCKET = 'receipt-images'
+const OLD_RECEIPT_BUCKET = 'app-a2kae62wkbnl_receipt_images' // 旧脚手架桶，历史数据仍在用
+
+// 解析存储值 → {桶, 对象路径}（兼容旧/新完整公开 URL 与新的纯路径）
+function parseStored(stored: string): { bucket: string; path: string } {
+  const s = String(stored || '')
+  for (const bucket of [OLD_RECEIPT_BUCKET, RECEIPT_BUCKET]) {
+    const marker = `/${bucket}/`
+    const i = s.indexOf(marker)
+    if (i >= 0) return { bucket, path: s.slice(i + marker.length) }
+  }
+  return { bucket: RECEIPT_BUCKET, path: s } // 裸路径默认新桶
+}
+
+// 批量签发临时可读链接（私有桶，默认 1 小时）；按所属桶分组签名，结果按原下标对齐
+async function handleSignDownload(body: any): Promise<Response> {
+  const inputs: string[] = Array.isArray(body?.paths) ? body.paths.map((x: unknown) => String(x)) : []
+  if (inputs.length === 0) return json({ data: [] })
+
+  const parsed = inputs.map((s) => parseStored(s))
+  const result: (string | null)[] = new Array(inputs.length).fill(null)
+  const byBucket: Record<string, { idx: number; path: string }[]> = {}
+  parsed.forEach((p, idx) => {
+    ;(byBucket[p.bucket] = byBucket[p.bucket] || []).push({ idx, path: p.path })
+  })
+
+  for (const [bucket, items] of Object.entries(byBucket)) {
+    const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/${bucket}`, {
+      method: 'POST',
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresIn: 3600, paths: items.map((it) => it.path) }),
+    })
+    if (!resp.ok) {
+      console.error('签名失败', bucket, await resp.text())
+      continue
+    }
+    const signed = await resp.json()
+    ;(Array.isArray(signed) ? signed : []).forEach((it: any, j: number) => {
+      if (it?.signedURL) result[items[j].idx] = `${SUPABASE_URL}/storage/v1${it.signedURL}`
+    })
+  }
+  return json({ data: result })
+}
+
+// 签发一次性上传链接（私有桶，客户端直传，anon 无需任何存储权限）
+async function handleSignUpload(body: any): Promise<Response> {
+  const ext = String(body?.ext || 'jpg').replace(/[^a-zA-Z0-9]/g, '').slice(0, 5) || 'jpg'
+  const path = `receipt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/upload/sign/${RECEIPT_BUCKET}/${path}`, {
+    method: 'POST',
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  if (!resp.ok) return json({ error: await resp.text() }, 500)
+  const data = await resp.json()
+  // data.url 形如 /object/upload/sign/<bucket>/<path>?token=...
+  return json({ data: { path, uploadUrl: `${SUPABASE_URL}/storage/v1${data.url}`, token: data.token } })
+}
+
 // ---------- 路由 ----------
 function getToken(req: Request): string | null {
   const direct = req.headers.get('x-driver-token')
@@ -418,6 +488,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (req.method === 'POST' && path.endsWith('/stats/monthly')) return await handleMonthlyStats(driverId, body)
     if (req.method === 'POST' && path.endsWith('/stats/overtime')) return await handleOvertimeCount(driverId, body)
     if (req.method === 'POST' && path.endsWith('/fund/stats')) return await handleFundStats(driverId, body)
+    if (req.method === 'POST' && path.endsWith('/storage/sign')) return await handleSignDownload(body)
+    if (req.method === 'POST' && path.endsWith('/storage/sign-upload')) return await handleSignUpload(body)
 
     return json({ error: '未知接口' }, 404)
   } catch (e) {

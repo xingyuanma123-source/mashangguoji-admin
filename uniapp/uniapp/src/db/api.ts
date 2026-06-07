@@ -87,9 +87,12 @@ export async function getFeeTypes() {
 
 // ==================== 报账记录相关 ====================
 
-/** 批量创建报账记录（driver_id / status / commission 由服务端强制） */
-export async function createExpenseRecords(records: Partial<ExpenseRecord>[]) {
-  const {data, error} = await callEdge<{data: ExpenseRecord[]}>('/records/create', {body: {records}})
+/** 批量创建报账记录（driver_id / status / commission 由服务端强制）
+ *  idempotencyKey：同一次提交的幂等键，超时重试时传同一个键，服务端不会重复插入 */
+export async function createExpenseRecords(records: Partial<ExpenseRecord>[], idempotencyKey?: string) {
+  const {data, error} = await callEdge<{data: ExpenseRecord[]}>('/records/create', {
+    body: {records, idempotency_key: idempotencyKey}
+  })
   if (error) return {data: [] as ExpenseRecord[], error}
   return {data: (data?.data ?? []) as ExpenseRecord[], error: null}
 }
@@ -178,6 +181,14 @@ export async function getRecordsPage(_driverId: number, year: number, month: num
   })
   if (error) return {data: fallback, error}
   return {data: (data?.data ?? fallback), error: null}
+}
+
+/** 为收据图片路径批量签发临时可读链接（私有桶；兼容旧的完整公开 URL） */
+export async function getSignedImageUrls(paths: string[]) {
+  if (!paths || paths.length === 0) return {data: [] as (string | null)[], error: null}
+  const {data, error} = await callEdge<{data: (string | null)[]}>('/storage/sign', {body: {paths}})
+  if (error) return {data: [] as (string | null)[], error}
+  return {data: (data?.data ?? []) as (string | null)[], error: null}
 }
 
 /** 我的页：一次返回 fund + overtime_count */
