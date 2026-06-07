@@ -8,6 +8,7 @@ import {checkVehicleExists, fetchOtherFees, getExpenseRecordById, getFeeTypes, u
 import type {ExpenseRecord, FeeItem, FeeType, OtherFeeItem, UploadFileInput} from '@/db/types'
 import {parseFeeLocationDetail} from '@/utils/feeLocation'
 import {chooseImages, getImageUrl, uploadFiles} from '@/utils/upload'
+import {validateFeeItems} from '@/utils/validateFees'
 
 function RecordEdit() {
   const [record, setRecord] = useState<ExpenseRecord | null>(null)
@@ -265,29 +266,13 @@ function RecordEdit() {
       return
     }
 
-    if (feeItems.length === 0) {
+    const feeError = validateFeeItems(feeItems)
+    if (feeError) {
       Taro.showToast({
-        title: '请至少添加一条费用',
+        title: feeError,
         icon: 'none'
       })
       return
-    }
-
-    for (const item of feeItems) {
-      if (!item.field_name) {
-        Taro.showToast({
-          title: '请选择费用类型',
-          icon: 'none'
-        })
-        return
-      }
-      if (item.field_name === 'other' && !item.note?.trim()) {
-        Taro.showToast({
-          title: '请输入"其他"费用名称',
-          icon: 'none'
-        })
-        return
-      }
     }
 
     // 检查车牌
@@ -472,6 +457,9 @@ function RecordEdit() {
                 </View>
                 <View
                   className="flex flex-row items-center justify-center py-3 bg-muted rounded-xl"
+                  role="button"
+                  ariaRole="button"
+                  ariaLabel="添加普通费用"
                   onClick={addFeeItem}>
                   <View className="i-mdi-plus-circle text-primary text-2xl mr-2" />
                   <Text className="text-xl text-primary font-medium">添加费用</Text>
@@ -511,7 +499,10 @@ function RecordEdit() {
                         />
                       </View>
                       <View
-                        className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                        className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除${item.note || '其他费用'}行`}
                         onClick={() => deleteFeeItem(item.id)}>
                         <View className="i-mdi-close text-destructive text-2xl" />
                       </View>
@@ -520,6 +511,9 @@ function RecordEdit() {
                 </View>
                 <View
                   className="flex flex-row items-center justify-center py-3 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5"
+                  role="button"
+                  ariaRole="button"
+                  ariaLabel="添加其他费用"
                   onClick={addOtherFeeItem}>
                   <View className="i-mdi-plus-circle text-emerald-600 text-2xl mr-2" />
                   <Text className="text-xl text-emerald-600 font-medium">添加其他费用</Text>
@@ -535,12 +529,18 @@ function RecordEdit() {
                         src={getImageUrl(img)}
                         className="w-full h-full rounded-xl"
                         mode="aspectFill"
+                        ariaLabel={`预览第${index + 1}张已有凭证图片`}
                         onClick={() => previewImage(getImageUrl(img))}
                       />
                       <View
-                        className="absolute top-0 right-0 w-6 h-6 bg-destructive rounded-full flex items-center justify-center"
+                        className="absolute -top-2 -right-2 h-11 w-11 flex items-center justify-center"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除第${index + 1}张已有凭证图片`}
                         onClick={() => deleteExistingImage(index)}>
-                        <View className="i-mdi-close text-white text-lg" />
+                        <View className="h-6 w-6 bg-destructive rounded-full flex items-center justify-center">
+                          <View className="i-mdi-close text-white text-lg" />
+                        </View>
                       </View>
                     </View>
                   ))}
@@ -550,18 +550,27 @@ function RecordEdit() {
                         src={img.path}
                         className="w-full h-full rounded-xl"
                         mode="aspectFill"
+                        ariaLabel={`预览第${existingImages.length + index + 1}张新凭证图片`}
                         onClick={() => previewImage(img.path)}
                       />
                       <View
-                        className="absolute top-0 right-0 w-6 h-6 bg-destructive rounded-full flex items-center justify-center"
+                        className="absolute -top-2 -right-2 h-11 w-11 flex items-center justify-center"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除第${existingImages.length + index + 1}张新凭证图片`}
                         onClick={() => deleteNewImage(index)}>
-                        <View className="i-mdi-close text-white text-lg" />
+                        <View className="h-6 w-6 bg-destructive rounded-full flex items-center justify-center">
+                          <View className="i-mdi-close text-white text-lg" />
+                        </View>
                       </View>
                     </View>
                   ))}
                   {receiptImages.length + existingImages.length < 9 && (
                     <View
                       className="w-24 h-24 bg-muted rounded-xl flex flex-col items-center justify-center"
+                      role="button"
+                      ariaRole="button"
+                      ariaLabel="上传凭证图片"
                       onClick={handleChooseImages}>
                       <View className="i-mdi-camera-plus text-muted-foreground text-4xl mb-1" />
                       <Text className="text-lg text-muted-foreground">上传</Text>

@@ -8,6 +8,7 @@ import {useAuth} from '@/contexts/AuthContext'
 import {createExpenseRecords, getDriverById, getFeeTypes} from '@/db/api'
 import type {ExpenseRecord, FeeType, OtherFeeItem, VehicleCard} from '@/db/types'
 import {uploadFiles} from '@/utils/upload'
+import {validateFeeItems} from '@/utils/validateFees'
 
 const STORAGE_KEY = 'expense_draft'
 
@@ -178,11 +179,18 @@ function Submit() {
       return
     }
 
-    // 表单校验
+    // 表单校验：车牌必填 + 拦截会算错账的费用行（有金额却没归类）
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i]
       if (!v.plate_number.trim()) {
+        setActiveVehicleIndex(i)
         Taro.showToast({title: `第${i + 1}辆车：请输入车牌号`, icon: 'none'})
+        return
+      }
+      const feeError = validateFeeItems(v.fee_items)
+      if (feeError) {
+        setActiveVehicleIndex(i)
+        Taro.showToast({title: `第${i + 1}辆车：${feeError}`, icon: 'none'})
         return
       }
     }
@@ -366,6 +374,9 @@ function Submit() {
               </Picker>
               <View
                 className="soft-chip px-4 py-4"
+                role="button"
+                ariaRole="button"
+                ariaLabel="选择今天作为报账日期"
                 onClick={() => setSelectedDate(todayStr)}>
                 <Text className="text-base text-primary font-medium">今天</Text>
               </View>
@@ -374,7 +385,7 @@ function Submit() {
 
           <View className="flex flex-row items-center justify-between">
             <Text className="text-base text-foreground font-medium">是否加班</Text>
-            <Switch checked={isOvertime} onChange={handleOvertimeChange} color="#3b82f6" />
+            <Switch checked={isOvertime} ariaLabel="是否加班" onChange={handleOvertimeChange} color="#3b82f6" />
           </View>
         </View>
       </View>
@@ -390,19 +401,30 @@ function Submit() {
                 return (
                   <View
                     key={vehicle.id}
-                    className={`relative shrink-0 rounded-full px-4 py-3 ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}
-                    onClick={() => setActiveVehicleIndex(index)}>
-                    <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
-                      {vehicleLabel}
-                    </Text>
+                    className={`relative shrink-0 rounded-full ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}>
+                    <View
+                      className="px-4 py-3"
+                      role="button"
+                      ariaRole="button"
+                      ariaLabel={`切换到${vehicleLabel}`}
+                      onClick={() => setActiveVehicleIndex(index)}>
+                      <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
+                        {vehicleLabel}
+                      </Text>
+                    </View>
                     {vehicles.length > 1 && (
                       <View
-                        className={`absolute -right-1 -top-1 h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-foreground/25' : 'bg-muted'}`}
+                        className="absolute -right-3 -top-3 h-11 w-11 flex items-center justify-center"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除${vehicleLabel}`}
                         onClick={(e) => {
                           e.stopPropagation?.()
                           deleteVehicle(index)
                         }}>
-                        <Text className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>×</Text>
+                        <View className={`h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-foreground/25' : 'bg-muted'}`}>
+                          <Text className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>×</Text>
+                        </View>
                       </View>
                     )}
                   </View>
@@ -411,6 +433,9 @@ function Submit() {
 
               <View
                 className="shrink-0 rounded-full border border-dashed border-primary/50 bg-primary/5 px-4 py-3"
+                role="button"
+                ariaRole="button"
+                ariaLabel="添加车辆"
                 onClick={addVehicle}>
                 <Text className="text-lg font-semibold text-primary">+</Text>
               </View>
@@ -466,7 +491,12 @@ function Submit() {
             <View className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0">
               <View className="flex flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-foreground">请确认报账信息</Text>
-                <View onClick={() => setShowConfirm(false)}>
+                <View
+                  className="h-11 w-11 flex items-center justify-center"
+                  role="button"
+                  ariaRole="button"
+                  ariaLabel="关闭报账确认"
+                  onClick={() => setShowConfirm(false)}>
                   <View className="i-mdi-close text-muted-foreground text-3xl" />
                 </View>
               </View>
@@ -522,6 +552,7 @@ function Submit() {
                               src={img.path}
                               className="w-16 h-16 rounded-lg"
                               mode="aspectFill"
+                              ariaLabel={`预览${v.plate_number}的凭证图片`}
                               onClick={() => Taro.previewImage({
                                 urls: v.receipt_images.map(i => i.path),
                                 current: img.path
@@ -549,11 +580,17 @@ function Submit() {
             <View className="px-6 py-4 flex flex-row space-x-4 border-t border-border flex-shrink-0">
               <View
                 className="flex-1 bg-muted rounded-2xl py-4 flex items-center justify-center"
+                role="button"
+                ariaRole="button"
+                ariaLabel="返回修改报账信息"
                 onClick={() => setShowConfirm(false)}>
                 <Text className="text-xl font-semibold text-foreground">返回修改</Text>
               </View>
               <View
                 className="flex-1 bg-primary rounded-2xl py-4 flex items-center justify-center"
+                role="button"
+                ariaRole="button"
+                ariaLabel="确认提交报账"
                 onClick={handleConfirmSubmit}>
                 <Text className="text-xl font-semibold text-primary-foreground">确认提交</Text>
               </View>
