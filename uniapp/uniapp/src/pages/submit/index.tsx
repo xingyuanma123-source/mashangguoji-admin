@@ -30,6 +30,15 @@ function isVehicleReady(v: VehicleCard) {
   return v.plate_number.trim() !== '' && validateFeeItems(v.fee_items) === null
 }
 
+// 生成一个合法的 v4 UUID（作为提交幂等键）
+function genUuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 function Submit() {
   const {driver} = useAuth()
   // 不默认今天：强制司机主动选日期，避免跨天提交误填（右侧另有"今天"快捷按钮）
@@ -42,6 +51,8 @@ function Submit() {
   const [showConfirm, setShowConfirm] = useState(false)
   // 草稿恢复只在首次进入时检查一次（与默认日期解耦）
   const draftCheckedRef = useRef(false)
+  // 提交幂等键：本次提交期间保持不变，超时重试复用同一键，成功后清空
+  const submissionKeyRef = useRef('')
 
   // 今天日期（用于快捷按钮）
   const todayStr = getTodayStr()
@@ -356,7 +367,9 @@ function Submit() {
         }
       })
 
-      const {error} = await createExpenseRecords(records)
+      // 幂等键：本次提交首次生成，重试复用（超时但其实已写入时，重试不会产生重复）
+      if (!submissionKeyRef.current) submissionKeyRef.current = genUuid()
+      const {error} = await createExpenseRecords(records, submissionKeyRef.current)
 
       if (error) {
         Taro.showToast({title: '提交失败，请重试', icon: 'none'})
@@ -366,6 +379,7 @@ function Submit() {
 
       Taro.showToast({title: `提交成功，共${vehicles.length}辆车`, icon: 'success'})
 
+      submissionKeyRef.current = '' // 成功后清空，下次提交用新键
       setVehicles([])
       setSelectedDate('')
       setActiveVehicleIndex(0)

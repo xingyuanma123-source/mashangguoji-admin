@@ -87,9 +87,12 @@ export async function getFeeTypes() {
 
 // ==================== 报账记录相关 ====================
 
-/** 批量创建报账记录（driver_id / status / commission 由服务端强制） */
-export async function createExpenseRecords(records: Partial<ExpenseRecord>[]) {
-  const {data, error} = await callEdge<{data: ExpenseRecord[]}>('/records/create', {body: {records}})
+/** 批量创建报账记录（driver_id / status / commission 由服务端强制）
+ *  idempotencyKey：同一次提交的幂等键，超时重试时传同一个键，服务端不会重复插入 */
+export async function createExpenseRecords(records: Partial<ExpenseRecord>[], idempotencyKey?: string) {
+  const {data, error} = await callEdge<{data: ExpenseRecord[]}>('/records/create', {
+    body: {records, idempotency_key: idempotencyKey}
+  })
   if (error) return {data: [] as ExpenseRecord[], error}
   return {data: (data?.data ?? []) as ExpenseRecord[], error: null}
 }

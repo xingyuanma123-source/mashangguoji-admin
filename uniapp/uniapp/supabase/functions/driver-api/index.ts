@@ -180,6 +180,15 @@ async function handleCreateRecords(driverId: number, body: any): Promise<Respons
   const records = Array.isArray(body?.records) ? body.records : []
   if (records.length === 0) return json({ error: '没有要提交的记录' }, 400)
 
+  // 幂等：同一提交键已处理过（弱网超时重试）→ 直接返回上次结果，不重复插入
+  const idemKey = typeof body?.idempotency_key === 'string' && body.idempotency_key ? body.idempotency_key : null
+  if (idemKey) {
+    const existing = await pgRows(
+      `/expense_records?select=*&driver_id=eq.${driverId}&idempotency_key=eq.${idemKey}&order=id.asc`,
+    )
+    if (existing.length > 0) return json({ data: existing, idempotent: true })
+  }
+
   const payload = records.map((r: any) => ({
     ...buildRecordFields(r),
     driver_id: driverId, // 强制为登录司机
@@ -187,6 +196,7 @@ async function handleCreateRecords(driverId: number, body: any): Promise<Respons
     status: 'pending',
     confirmed_by: null,
     confirmed_at: null,
+    idempotency_key: idemKey,
   }))
 
   const insertResp = await pg('/expense_records', {
