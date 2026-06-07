@@ -417,19 +417,27 @@ function Submit() {
               {vehicles.map((vehicle, index) => {
                 const isActive = index === activeVehicleIndex
                 const vehicleLabel = vehicle.plate_number?.trim() || `车辆${index + 1}`
+                // 就绪 = 车牌已填 且 无算错账的费用行（复用 P1 校验）
+                const isReady = vehicle.plate_number.trim() !== '' && validateFeeItems(vehicle.fee_items) === null
 
                 return (
                   <View
                     key={vehicle.id}
                     className={`relative shrink-0 rounded-full ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}>
                     <View
-                      className="px-4 py-3"
+                      className="px-4 py-2"
                       role="button"
                       ariaRole="button"
-                      ariaLabel={`切换到${vehicleLabel}`}
+                      ariaLabel={`切换到${vehicleLabel}，${isReady ? '已就绪' : '待处理'}，小计${vehicle.total.toFixed(2)}元`}
                       onClick={() => setActiveVehicleIndex(index)}>
-                      <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
-                        {vehicleLabel}
+                      <View className="flex flex-row items-center gap-1.5">
+                        <View className={`h-2 w-2 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-orange-400'}`} />
+                        <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
+                          {vehicleLabel}
+                        </Text>
+                      </View>
+                      <Text className={`mt-0.5 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                        ¥{vehicle.total.toFixed(2)}
                       </Text>
                     </View>
                     {vehicles.length > 1 && (
