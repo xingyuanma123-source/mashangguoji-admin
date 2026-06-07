@@ -25,6 +25,11 @@ function formatDateLabel(d: string) {
   return `${Number(parts[1])}月${Number(parts[2])}日`
 }
 
+// 车辆是否就绪：车牌已填 且 无"算错账"的费用行（标签状态与提交校验共用）
+function isVehicleReady(v: VehicleCard) {
+  return v.plate_number.trim() !== '' && validateFeeItems(v.fee_items) === null
+}
+
 function Submit() {
   const {driver} = useAuth()
   // 不默认今天：强制司机主动选日期，避免跨天提交误填（右侧另有"今天"快捷按钮）
@@ -214,17 +219,20 @@ function Submit() {
     }
 
     // 表单校验：车牌必填 + 拦截会算错账的费用行（有金额却没归类）
+    // 多辆车未填好时，附带"共N辆待完善"汇总，提醒不止当前这辆
+    const unreadyCount = vehicles.filter((v) => !isVehicleReady(v)).length
+    const moreHint = unreadyCount > 1 ? `，共${unreadyCount}辆待完善` : ''
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i]
       if (!v.plate_number.trim()) {
         setActiveVehicleIndex(i)
-        Taro.showToast({title: `第${i + 1}辆车：请输入车牌号`, icon: 'none'})
+        Taro.showToast({title: `第${i + 1}辆车：请输入车牌号${moreHint}`, icon: 'none'})
         return
       }
       const feeError = validateFeeItems(v.fee_items)
       if (feeError) {
         setActiveVehicleIndex(i)
-        Taro.showToast({title: `第${i + 1}辆车：${feeError}`, icon: 'none'})
+        Taro.showToast({title: `第${i + 1}辆车：${feeError}${moreHint}`, icon: 'none'})
         return
       }
     }
@@ -431,8 +439,7 @@ function Submit() {
               {vehicles.map((vehicle, index) => {
                 const isActive = index === activeVehicleIndex
                 const vehicleLabel = vehicle.plate_number?.trim() || `车辆${index + 1}`
-                // 就绪 = 车牌已填 且 无算错账的费用行（复用 P1 校验）
-                const isReady = vehicle.plate_number.trim() !== '' && validateFeeItems(vehicle.fee_items) === null
+                const isReady = isVehicleReady(vehicle)
 
                 return (
                   <View
