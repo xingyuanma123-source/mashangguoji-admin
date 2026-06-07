@@ -6,7 +6,7 @@ import FeeRow from '@/components/FeeRow'
 import {withRouteGuard} from '@/components/RouteGuard'
 import {checkVehicleExists, fetchOtherFees, getExpenseRecordById, getFeeTypes, updateExpenseRecord} from '@/db/api'
 import type {ExpenseRecord, FeeItem, FeeType, OtherFeeItem, UploadFileInput} from '@/db/types'
-import {parseFeeLocationDetail} from '@/utils/feeLocation'
+import {type FeeLocationItem, parseFeeLocationDetail} from '@/utils/feeLocation'
 import {chooseImages, getImageUrl, uploadFiles} from '@/utils/upload'
 import {validateFeeItems} from '@/utils/validateFees'
 
@@ -78,41 +78,58 @@ function RecordEdit() {
       {field: 'fee_stamp', name: '盖章'}
     ]
 
-    // 解析 fee_location_detail，提取正常费用的地点备注
+    // 解析 fee_location_detail，提取正常费用的地点明细（含各自金额）
     // 格式：停车费(北投):35; 过磅费(桂福):10
-    const noteMap: Record<string, string[]> = {} // field_name -> [note, note, ...]
+    const detailMap: Record<string, FeeLocationItem[]> = {} // field_name -> [{location, amount}, ...]
     const locationMap = parseFeeLocationDetail(recordData.fee_location_detail)
-    Object.entries(locationMap).forEach(([displayName, items]) => {
+    Object.entries(locationMap).forEach(([displayName, locItems]) => {
       const found = feeFields.find((f) => f.name === displayName)
       if (!found) return
 
-      noteMap[found.field] = items.map((item) => item.location)
+      detailMap[found.field] = locItems
     })
 
     for (const {field, name} of feeFields) {
       const amount = recordData[field as keyof ExpenseRecord] as number
-      if (amount > 0) {
-        const notes = noteMap[field] || []
-        if (notes.length > 1) {
-          // 同一费用有多条备注，拆成多行（金额无法还原各自的，均摊显示总额）
-          notes.forEach((note) => {
-            items.push({
-              id: `fee_${Date.now()}_${Math.random()}`,
-              field_name: field,
-              display_name: name,
-              amount,
-              note
-            })
-          })
-        } else {
-          items.push({
-            id: `fee_${Date.now()}_${Math.random()}`,
-            field_name: field,
-            display_name: name,
-            amount,
-            note: notes[0] || ''
-          })
-        }
+      if (!(amount > 0)) continue
+
+      const details = detailMap[field] || []
+
+      // 没有地点明细：单行，用字段总额
+      if (details.length === 0) {
+        items.push({
+          id: `fee_${Date.now()}_${Math.random()}`,
+          field_name: field,
+          display_name: name,
+          amount,
+          note: ''
+        })
+        continue
+      }
+
+      // 有地点明细：每条用各自的真实金额还原（修复"多条备注共用总额导致金额放大"的问题）
+      let restored = 0
+      for (const detail of details) {
+        items.push({
+          id: `fee_${Date.now()}_${Math.random()}`,
+          field_name: field,
+          display_name: name,
+          amount: detail.amount,
+          note: detail.location
+        })
+        restored += detail.amount
+      }
+
+      // 字段总额若仍有未被明细覆盖的余额（存在无地点备注的同类费用）→ 补一行无备注，保证还原后总额不变
+      const remainder = Math.round((amount - restored) * 100) / 100
+      if (remainder > 0) {
+        items.push({
+          id: `fee_${Date.now()}_${Math.random()}`,
+          field_name: field,
+          display_name: name,
+          amount: remainder,
+          note: ''
+        })
       }
     }
 
@@ -288,6 +305,23 @@ function RecordEdit() {
 
       if (!confirmed) return
     }
+
+    // 保存前确认：展示修改前 / 修改后总额，作为金额被意外改动的兜底
+    const originalTotal = record.total_expense || 0
+    const newTotal = feeItems.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const totalChanged = Math.abs(newTotal - originalTotal) > 0.005
+    const totalConfirmed = await new Promise<boolean>((resolve) => {
+      Taro.showModal({
+        title: '确认保存修改',
+        content:
+          `原总额：¥${originalTotal.toFixed(2)}\n修改后：¥${newTotal.toFixed(2)}` +
+          (totalChanged ? '\n\n⚠️ 总额已变化，请确认无误' : ''),
+        confirmText: '确认保存',
+        cancelText: '返回检查',
+        success: (res) => resolve(res.confirm)
+      })
+    })
+    if (!totalConfirmed) return
 
     setLoading(true)
 
