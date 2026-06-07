@@ -27,7 +27,8 @@ function formatDateLabel(d: string) {
 
 function Submit() {
   const {driver} = useAuth()
-  const [selectedDate, setSelectedDate] = useState(getTodayStr)
+  // 不默认今天：强制司机主动选日期，避免跨天提交误填（右侧另有"今天"快捷按钮）
+  const [selectedDate, setSelectedDate] = useState('')
   const [isOvertime, setIsOvertime] = useState(false)
   const [vehicles, setVehicles] = useState<VehicleCard[]>([])
   const [activeVehicleIndex, setActiveVehicleIndex] = useState(0)
@@ -82,7 +83,7 @@ function Submit() {
       content: '检测到上次未提交的报账记录，是否恢复？',
       success: (res) => {
         if (res.confirm) {
-          setSelectedDate(draft.selectedDate || getTodayStr())
+          setSelectedDate(draft.selectedDate || '')
           setIsOvertime(draft.isOvertime || false)
           setVehicles(draft.vehicles || [])
         } else {
