@@ -1,5 +1,5 @@
 export default definePageConfig({
-  navigationBarTitleText: '报账',
+  navigationBarTitleText: '使用条款',
   enableShareAppMessage: false,
   enableShareTimeline: false
 })

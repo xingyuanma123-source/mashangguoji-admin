@@ -584,5 +584,6 @@ export async function getFundStats(driverId: number, year: number, month: number
     records
   }
 
-  return {data: stats, error: null}
+  // 任一查询失败都把 error 带出去，避免页面把失败当成"余额为0/无流水"
+  return {data: stats, error: fundError || expenseError || null}
 }

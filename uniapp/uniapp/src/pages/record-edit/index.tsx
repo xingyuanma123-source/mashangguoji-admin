@@ -6,8 +6,9 @@ import FeeRow from '@/components/FeeRow'
 import {withRouteGuard} from '@/components/RouteGuard'
 import {checkVehicleExists, fetchOtherFees, getExpenseRecordById, getFeeTypes, updateExpenseRecord} from '@/db/api'
 import type {ExpenseRecord, FeeItem, FeeType, OtherFeeItem, UploadFileInput} from '@/db/types'
-import {parseFeeLocationDetail} from '@/utils/feeLocation'
+import {type FeeLocationItem, parseFeeLocationDetail} from '@/utils/feeLocation'
 import {chooseImages, getImageUrl, uploadFiles} from '@/utils/upload'
+import {validateFeeItems} from '@/utils/validateFees'
 
 function RecordEdit() {
   const [record, setRecord] = useState<ExpenseRecord | null>(null)
@@ -45,7 +46,7 @@ function RecordEdit() {
 
     if (recordData.status !== 'pending') {
       Taro.showToast({
-        title: '已确认的记录不可编辑',
+        title: '这条记录已确认，不能修改',
         icon: 'none'
       })
       setTimeout(() => {
@@ -77,41 +78,58 @@ function RecordEdit() {
       {field: 'fee_stamp', name: '盖章'}
     ]
 
-    // 解析 fee_location_detail，提取正常费用的地点备注
+    // 解析 fee_location_detail，提取正常费用的地点明细（含各自金额）
     // 格式：停车费(北投):35; 过磅费(桂福):10
-    const noteMap: Record<string, string[]> = {} // field_name -> [note, note, ...]
+    const detailMap: Record<string, FeeLocationItem[]> = {} // field_name -> [{location, amount}, ...]
     const locationMap = parseFeeLocationDetail(recordData.fee_location_detail)
-    Object.entries(locationMap).forEach(([displayName, items]) => {
+    Object.entries(locationMap).forEach(([displayName, locItems]) => {
       const found = feeFields.find((f) => f.name === displayName)
       if (!found) return
 
-      noteMap[found.field] = items.map((item) => item.location)
+      detailMap[found.field] = locItems
     })
 
     for (const {field, name} of feeFields) {
       const amount = recordData[field as keyof ExpenseRecord] as number
-      if (amount > 0) {
-        const notes = noteMap[field] || []
-        if (notes.length > 1) {
-          // 同一费用有多条备注，拆成多行（金额无法还原各自的，均摊显示总额）
-          notes.forEach((note) => {
-            items.push({
-              id: `fee_${Date.now()}_${Math.random()}`,
-              field_name: field,
-              display_name: name,
-              amount,
-              note
-            })
-          })
-        } else {
-          items.push({
-            id: `fee_${Date.now()}_${Math.random()}`,
-            field_name: field,
-            display_name: name,
-            amount,
-            note: notes[0] || ''
-          })
-        }
+      if (!(amount > 0)) continue
+
+      const details = detailMap[field] || []
+
+      // 没有地点明细：单行，用字段总额
+      if (details.length === 0) {
+        items.push({
+          id: `fee_${Date.now()}_${Math.random()}`,
+          field_name: field,
+          display_name: name,
+          amount,
+          note: ''
+        })
+        continue
+      }
+
+      // 有地点明细：每条用各自的真实金额还原（修复"多条备注共用总额导致金额放大"的问题）
+      let restored = 0
+      for (const detail of details) {
+        items.push({
+          id: `fee_${Date.now()}_${Math.random()}`,
+          field_name: field,
+          display_name: name,
+          amount: detail.amount,
+          note: detail.location
+        })
+        restored += detail.amount
+      }
+
+      // 字段总额若仍有未被明细覆盖的余额（存在无地点备注的同类费用）→ 补一行无备注，保证还原后总额不变
+      const remainder = Math.round((amount - restored) * 100) / 100
+      if (remainder > 0) {
+        items.push({
+          id: `fee_${Date.now()}_${Math.random()}`,
+          field_name: field,
+          display_name: name,
+          amount: remainder,
+          note: ''
+        })
       }
     }
 
@@ -265,29 +283,13 @@ function RecordEdit() {
       return
     }
 
-    if (feeItems.length === 0) {
+    const feeError = validateFeeItems(feeItems)
+    if (feeError) {
       Taro.showToast({
-        title: '请至少添加一条费用',
+        title: feeError,
         icon: 'none'
       })
       return
-    }
-
-    for (const item of feeItems) {
-      if (!item.field_name) {
-        Taro.showToast({
-          title: '请选择费用类型',
-          icon: 'none'
-        })
-        return
-      }
-      if (item.field_name === 'other' && !item.note?.trim()) {
-        Taro.showToast({
-          title: '请输入"其他"费用名称',
-          icon: 'none'
-        })
-        return
-      }
     }
 
     // 检查车牌
@@ -303,6 +305,23 @@ function RecordEdit() {
 
       if (!confirmed) return
     }
+
+    // 保存前确认：展示修改前 / 修改后总额，作为金额被意外改动的兜底
+    const originalTotal = record.total_expense || 0
+    const newTotal = feeItems.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const totalChanged = Math.abs(newTotal - originalTotal) > 0.005
+    const totalConfirmed = await new Promise<boolean>((resolve) => {
+      Taro.showModal({
+        title: '确认保存修改',
+        content:
+          `原总额：¥${originalTotal.toFixed(2)}\n修改后：¥${newTotal.toFixed(2)}` +
+          (totalChanged ? '\n\n⚠️ 总额已变化，请确认无误' : ''),
+        confirmText: '确认保存',
+        cancelText: '返回检查',
+        success: (res) => resolve(res.confirm)
+      })
+    })
+    if (!totalConfirmed) return
 
     setLoading(true)
 
@@ -472,6 +491,9 @@ function RecordEdit() {
                 </View>
                 <View
                   className="flex flex-row items-center justify-center py-3 bg-muted rounded-xl"
+                  role="button"
+                  ariaRole="button"
+                  ariaLabel="添加普通费用"
                   onClick={addFeeItem}>
                   <View className="i-mdi-plus-circle text-primary text-2xl mr-2" />
                   <Text className="text-xl text-primary font-medium">添加费用</Text>
@@ -511,7 +533,10 @@ function RecordEdit() {
                         />
                       </View>
                       <View
-                        className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                        className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除${item.note || '其他费用'}行`}
                         onClick={() => deleteFeeItem(item.id)}>
                         <View className="i-mdi-close text-destructive text-2xl" />
                       </View>
@@ -520,6 +545,9 @@ function RecordEdit() {
                 </View>
                 <View
                   className="flex flex-row items-center justify-center py-3 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5"
+                  role="button"
+                  ariaRole="button"
+                  ariaLabel="添加其他费用"
                   onClick={addOtherFeeItem}>
                   <View className="i-mdi-plus-circle text-emerald-600 text-2xl mr-2" />
                   <Text className="text-xl text-emerald-600 font-medium">添加其他费用</Text>
@@ -535,12 +563,18 @@ function RecordEdit() {
                         src={getImageUrl(img)}
                         className="w-full h-full rounded-xl"
                         mode="aspectFill"
+                        ariaLabel={`预览第${index + 1}张已有凭证图片`}
                         onClick={() => previewImage(getImageUrl(img))}
                       />
                       <View
-                        className="absolute top-0 right-0 w-6 h-6 bg-destructive rounded-full flex items-center justify-center"
+                        className="absolute -top-2 -right-2 h-11 w-11 flex items-center justify-center"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除第${index + 1}张已有凭证图片`}
                         onClick={() => deleteExistingImage(index)}>
-                        <View className="i-mdi-close text-white text-lg" />
+                        <View className="h-6 w-6 bg-destructive rounded-full flex items-center justify-center">
+                          <View className="i-mdi-close text-white text-lg" />
+                        </View>
                       </View>
                     </View>
                   ))}
@@ -550,18 +584,27 @@ function RecordEdit() {
                         src={img.path}
                         className="w-full h-full rounded-xl"
                         mode="aspectFill"
+                        ariaLabel={`预览第${existingImages.length + index + 1}张新凭证图片`}
                         onClick={() => previewImage(img.path)}
                       />
                       <View
-                        className="absolute top-0 right-0 w-6 h-6 bg-destructive rounded-full flex items-center justify-center"
+                        className="absolute -top-2 -right-2 h-11 w-11 flex items-center justify-center"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除第${existingImages.length + index + 1}张新凭证图片`}
                         onClick={() => deleteNewImage(index)}>
-                        <View className="i-mdi-close text-white text-lg" />
+                        <View className="h-6 w-6 bg-destructive rounded-full flex items-center justify-center">
+                          <View className="i-mdi-close text-white text-lg" />
+                        </View>
                       </View>
                     </View>
                   ))}
                   {receiptImages.length + existingImages.length < 9 && (
                     <View
                       className="w-24 h-24 bg-muted rounded-xl flex flex-col items-center justify-center"
+                      role="button"
+                      ariaRole="button"
+                      ariaLabel="上传凭证图片"
                       onClick={handleChooseImages}>
                       <View className="i-mdi-camera-plus text-muted-foreground text-4xl mb-1" />
                       <Text className="text-lg text-muted-foreground">上传</Text>

@@ -1,18 +1,38 @@
 // 报账提交页（首页）
 import {Button, Image, Picker, ScrollView, Switch, Text, View} from '@tarojs/components'
 import Taro, {useDidShow} from '@tarojs/taro'
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 import {withRouteGuard} from '@/components/RouteGuard'
 import VehicleCardComponent from '@/components/VehicleCard'
 import {useAuth} from '@/contexts/AuthContext'
 import {createExpenseRecords, getDriverById, getFeeTypes} from '@/db/api'
 import type {ExpenseRecord, FeeType, OtherFeeItem, VehicleCard} from '@/db/types'
 import {uploadFiles} from '@/utils/upload'
+import {validateFeeItems} from '@/utils/validateFees'
 
 const STORAGE_KEY = 'expense_draft'
 
+// 今天日期 YYYY-MM-DD
+function getTodayStr() {
+  const today = new Date()
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+}
+
+// YYYY-MM-DD → M月D日（用于合计标题）
+function formatDateLabel(d: string) {
+  const parts = d.split('-')
+  if (parts.length !== 3) return d || '本次'
+  return `${Number(parts[1])}月${Number(parts[2])}日`
+}
+
+// 车辆是否就绪：车牌已填 且 无"算错账"的费用行（标签状态与提交校验共用）
+function isVehicleReady(v: VehicleCard) {
+  return v.plate_number.trim() !== '' && validateFeeItems(v.fee_items) === null
+}
+
 function Submit() {
   const {driver} = useAuth()
+  // 不默认今天：强制司机主动选日期，避免跨天提交误填（右侧另有"今天"快捷按钮）
   const [selectedDate, setSelectedDate] = useState('')
   const [isOvertime, setIsOvertime] = useState(false)
   const [vehicles, setVehicles] = useState<VehicleCard[]>([])
@@ -20,12 +40,11 @@ function Submit() {
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
   const [loading, setLoading] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  // 草稿恢复只在首次进入时检查一次（与默认日期解耦）
+  const draftCheckedRef = useRef(false)
 
   // 今天日期（用于快捷按钮）
-  const todayStr = (() => {
-    const today = new Date()
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  })()
+  const todayStr = getTodayStr()
 
   // 加载费用类型
   useEffect(() => {
@@ -48,8 +67,9 @@ function Submit() {
 
   // 恢复暂存
   useDidShow(() => {
-    // 当前页面已有内容（用户正在操作或刚从相册返回），不弹提示
-    if (vehicles.length > 0 || selectedDate) return
+    // 只在首次进入时检查一次：避免从相册返回等重复弹窗，也不依赖日期是否为空
+    if (draftCheckedRef.current) return
+    draftCheckedRef.current = true
 
     const draft = Taro.getStorageSync(STORAGE_KEY)
     if (!draft || !draft.vehicles) return
@@ -108,7 +128,7 @@ function Submit() {
     setVehicles(newVehicles)
   }
 
-  const deleteVehicle = (index: number) => {
+  const removeVehicle = (index: number) => {
     const newVehicles = vehicles.filter((_, i) => i !== index)
     setVehicles(newVehicles)
     setActiveVehicleIndex((prev) => {
@@ -116,6 +136,26 @@ function Submit() {
       if (index < prev) return prev - 1
       if (index === prev) return Math.max(0, prev - 1)
       return prev
+    })
+  }
+
+  const deleteVehicle = (index: number) => {
+    const v = vehicles[index]
+    // 空白车辆（无车牌、无费用、无图片）没什么可丢，直接删不打扰
+    const isEmpty = !v || (!v.plate_number.trim() && v.fee_items.length === 0 && v.receipt_images.length === 0)
+    if (isEmpty) {
+      removeVehicle(index)
+      return
+    }
+
+    Taro.showModal({
+      title: '删除车辆',
+      content: `确定删除${v.plate_number.trim() || '这辆车'}吗？车牌、费用、图片都会一起清空。`,
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) removeVehicle(index)
+      }
     })
   }
 
@@ -178,11 +218,21 @@ function Submit() {
       return
     }
 
-    // 表单校验
+    // 表单校验：车牌必填 + 拦截会算错账的费用行（有金额却没归类）
+    // 多辆车未填好时，附带"共N辆待完善"汇总，提醒不止当前这辆
+    const unreadyCount = vehicles.filter((v) => !isVehicleReady(v)).length
+    const moreHint = unreadyCount > 1 ? `，共${unreadyCount}辆待完善` : ''
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i]
       if (!v.plate_number.trim()) {
-        Taro.showToast({title: `第${i + 1}辆车：请输入车牌号`, icon: 'none'})
+        setActiveVehicleIndex(i)
+        Taro.showToast({title: `第${i + 1}辆车：请输入车牌号${moreHint}`, icon: 'none'})
+        return
+      }
+      const feeError = validateFeeItems(v.fee_items)
+      if (feeError) {
+        setActiveVehicleIndex(i)
+        Taro.showToast({title: `第${i + 1}辆车：${feeError}${moreHint}`, icon: 'none'})
         return
       }
     }
@@ -366,6 +416,9 @@ function Submit() {
               </Picker>
               <View
                 className="soft-chip px-4 py-4"
+                role="button"
+                ariaRole="button"
+                ariaLabel="选择今天作为报账日期"
                 onClick={() => setSelectedDate(todayStr)}>
                 <Text className="text-base text-primary font-medium">今天</Text>
               </View>
@@ -374,7 +427,7 @@ function Submit() {
 
           <View className="flex flex-row items-center justify-between">
             <Text className="text-base text-foreground font-medium">是否加班</Text>
-            <Switch checked={isOvertime} onChange={handleOvertimeChange} color="#3b82f6" />
+            <Switch checked={isOvertime} ariaLabel="是否加班" onChange={handleOvertimeChange} color="#3b82f6" />
           </View>
         </View>
       </View>
@@ -386,23 +439,41 @@ function Submit() {
               {vehicles.map((vehicle, index) => {
                 const isActive = index === activeVehicleIndex
                 const vehicleLabel = vehicle.plate_number?.trim() || `车辆${index + 1}`
+                const isReady = isVehicleReady(vehicle)
 
                 return (
                   <View
                     key={vehicle.id}
-                    className={`relative shrink-0 rounded-full px-4 py-3 ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}
-                    onClick={() => setActiveVehicleIndex(index)}>
-                    <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
-                      {vehicleLabel}
-                    </Text>
+                    className={`relative shrink-0 rounded-full ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}>
+                    <View
+                      className="px-4 py-2"
+                      role="button"
+                      ariaRole="button"
+                      ariaLabel={`切换到${vehicleLabel}，${isReady ? '已就绪' : '待处理'}，小计${vehicle.total.toFixed(2)}元`}
+                      onClick={() => setActiveVehicleIndex(index)}>
+                      <View className="flex flex-row items-center gap-1.5">
+                        <View className={`h-2 w-2 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-orange-400'}`} />
+                        <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
+                          {vehicleLabel}
+                        </Text>
+                      </View>
+                      <Text className={`mt-0.5 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                        ¥{vehicle.total.toFixed(2)}
+                      </Text>
+                    </View>
                     {vehicles.length > 1 && (
                       <View
-                        className={`absolute -right-1 -top-1 h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-foreground/25' : 'bg-muted'}`}
+                        className="absolute -right-3 -top-3 h-11 w-11 flex items-center justify-center"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`删除${vehicleLabel}`}
                         onClick={(e) => {
                           e.stopPropagation?.()
                           deleteVehicle(index)
                         }}>
-                        <Text className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>×</Text>
+                        <View className={`h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-foreground/25' : 'bg-muted'}`}>
+                          <Text className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>×</Text>
+                        </View>
                       </View>
                     )}
                   </View>
@@ -411,6 +482,9 @@ function Submit() {
 
               <View
                 className="shrink-0 rounded-full border border-dashed border-primary/50 bg-primary/5 px-4 py-3"
+                role="button"
+                ariaRole="button"
+                ariaLabel="添加车辆"
                 onClick={addVehicle}>
                 <Text className="text-lg font-semibold text-primary">+</Text>
               </View>
@@ -427,7 +501,6 @@ function Submit() {
               card={currentVehicle}
               feeTypes={feeTypes}
               onChange={(card) => updateVehicle(activeVehicleIndex, card)}
-              onDelete={() => deleteVehicle(activeVehicleIndex)}
             />
           )}
         </View>
@@ -436,7 +509,7 @@ function Submit() {
       <View className="border-t border-border bg-background/95 px-4 pb-6 pt-4">
         <View className="surface-card bg-primary/10 p-4 mb-2">
             <View className="flex flex-row items-center justify-between">
-              <Text className="text-base text-foreground font-medium">今日费用合计</Text>
+              <Text className="text-base text-foreground font-medium">{formatDateLabel(selectedDate)}费用合计</Text>
               <Text className="text-2xl font-bold text-primary">¥{getTotalExpense().toFixed(2)}</Text>
             </View>
           </View>
@@ -466,7 +539,12 @@ function Submit() {
             <View className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0">
               <View className="flex flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-foreground">请确认报账信息</Text>
-                <View onClick={() => setShowConfirm(false)}>
+                <View
+                  className="h-11 w-11 flex items-center justify-center"
+                  role="button"
+                  ariaRole="button"
+                  ariaLabel="关闭报账确认"
+                  onClick={() => setShowConfirm(false)}>
                   <View className="i-mdi-close text-muted-foreground text-3xl" />
                 </View>
               </View>
@@ -522,6 +600,7 @@ function Submit() {
                               src={img.path}
                               className="w-16 h-16 rounded-lg"
                               mode="aspectFill"
+                              ariaLabel={`预览${v.plate_number}的凭证图片`}
                               onClick={() => Taro.previewImage({
                                 urls: v.receipt_images.map(i => i.path),
                                 current: img.path
@@ -549,11 +628,17 @@ function Submit() {
             <View className="px-6 py-4 flex flex-row space-x-4 border-t border-border flex-shrink-0">
               <View
                 className="flex-1 bg-muted rounded-2xl py-4 flex items-center justify-center"
+                role="button"
+                ariaRole="button"
+                ariaLabel="返回修改报账信息"
                 onClick={() => setShowConfirm(false)}>
                 <Text className="text-xl font-semibold text-foreground">返回修改</Text>
               </View>
               <View
                 className="flex-1 bg-primary rounded-2xl py-4 flex items-center justify-center"
+                role="button"
+                ariaRole="button"
+                ariaLabel="确认提交报账"
                 onClick={handleConfirmSubmit}>
                 <Text className="text-xl font-semibold text-primary-foreground">确认提交</Text>
               </View>

@@ -4,6 +4,7 @@ import {useState, useEffect, useCallback} from 'react'
 import Taro, {useDidShow} from '@tarojs/taro'
 import {useAuth} from '@/contexts/AuthContext'
 import {withRouteGuard} from '@/components/RouteGuard'
+import LoadErrorBanner from '@/components/LoadErrorBanner'
 import type {FundStats} from '@/db/types'
 import {getFundStats, getOvertimeCount} from '@/db/api'
 
@@ -17,6 +18,7 @@ function Profile() {
     records: []
   })
   const [overtimeCount, setOvertimeCount] = useState(0)
+  const [loadError, setLoadError] = useState(false)
 
   // 初始化为当月
   useEffect(() => {
@@ -26,15 +28,25 @@ function Profile() {
   }, [])
 
   const loadData = useCallback(async () => {
-    if (!driver || !selectedMonth) return
+    if (!driver || !selectedMonth) return false
 
     const [year, month] = selectedMonth.split('-').map(Number)
 
-    const {data: stats} = await getFundStats(driver.id, year, month)
-    setFundStats(stats)
+    const [fundRes, overtimeRes] = await Promise.all([
+      getFundStats(driver.id, year, month),
+      getOvertimeCount(driver.id, year, month)
+    ])
 
-    const {count} = await getOvertimeCount(driver.id, year, month)
-    setOvertimeCount(count)
+    // 任一接口失败：保留上次成功的数据，标记加载失败，不用零值覆盖
+    if (fundRes.error || overtimeRes.error) {
+      setLoadError(true)
+      return false
+    }
+
+    setLoadError(false)
+    setFundStats(fundRes.data)
+    setOvertimeCount(overtimeRes.count)
+    return true
   }, [driver, selectedMonth])
 
   useDidShow(() => {
@@ -72,6 +84,7 @@ function Profile() {
     <View className="page-shell">
       <ScrollView className="w-full" scrollY>
         <View className="px-4 py-5">
+          {loadError && <LoadErrorBanner onRetry={loadData} />}
           <View className="surface-card p-4 mb-4">
             <View className="flex flex-row items-center justify-between">
               <View className="flex flex-row items-center gap-3">

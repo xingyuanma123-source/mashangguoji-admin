@@ -11,15 +11,13 @@ interface VehicleCardProps {
   card: VehicleCard
   feeTypes: FeeType[]
   onChange: (card: VehicleCard) => void
-  onDelete: () => void
 }
 
-export default function VehicleCardComponent({card, feeTypes, onChange, onDelete}: VehicleCardProps) {
+export default function VehicleCardComponent({card, feeTypes, onChange}: VehicleCardProps) {
   const [plateSearch, setPlateSearch] = useState('')
   const [searchResults, setSearchResults] = useState<string[]>([])
   const [showSearch, setShowSearch] = useState(false)
   const [plateValid, setPlateValid] = useState<'valid' | 'invalid' | 'unknown'>('unknown')
-  const [collapsed, setCollapsed] = useState(false)
 
   const normalizePlateKeyword = (value: string) => value.replace(/\s+/g, '').trim().toUpperCase()
 
@@ -130,13 +128,33 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
     })
   }
 
-  const deleteFeeItem = (itemId: string) => {
+  const performDeleteFeeItem = (itemId: string) => {
     const newItems = card.fee_items.filter((item) => item.id !== itemId)
     const total = newItems.reduce((sum, fee) => sum + (fee.amount || 0), 0)
     onChange({
       ...card,
       fee_items: newItems,
       total
+    })
+  }
+
+  const deleteFeeItem = (itemId: string) => {
+    const target = card.fee_items.find((item) => item.id === itemId)
+    // 空费用行（无金额、无备注/名称）直接删，不打扰
+    const isEmpty = !target || (!(target.amount > 0) && !target.note?.trim())
+    if (isEmpty) {
+      performDeleteFeeItem(itemId)
+      return
+    }
+
+    Taro.showModal({
+      title: '删除费用',
+      content: '确定删除这条费用吗？',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) performDeleteFeeItem(itemId)
+      }
     })
   }
 
@@ -162,10 +180,19 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
   }
 
   const deleteImage = (index: number) => {
-    const newImages = card.receipt_images.filter((_, i) => i !== index)
-    onChange({
-      ...card,
-      receipt_images: newImages
+    Taro.showModal({
+      title: '删除图片',
+      content: '确定删除这张图片吗？',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (!res.confirm) return
+        const newImages = card.receipt_images.filter((_, i) => i !== index)
+        onChange({
+          ...card,
+          receipt_images: newImages
+        })
+      }
     })
   }
 
@@ -189,37 +216,23 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
 
   return (
     <View className="surface-card p-4 mb-4">
-      <View className="flex flex-row items-center justify-between" onClick={() => setCollapsed(!collapsed)}>
+      <View className="flex flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-xl font-semibold text-foreground">{card.plate_number || '车辆信息'}</Text>
           <View className="mt-1 inline-flex soft-chip px-3 py-1">
             <Text className="text-base text-primary">小计 ¥{card.total.toFixed(2)}</Text>
           </View>
         </View>
-
-        <View className="flex flex-row items-center gap-2">
-          <View
-            className="h-9 w-9 rounded-full bg-destructive/10 flex items-center justify-center"
-            onClick={(e) => {
-              e.stopPropagation?.()
-              onDelete()
-            }}>
-            <View className="i-mdi-delete text-destructive text-xl" />
-          </View>
-          <View className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
-            <View className={`${collapsed ? 'i-mdi-chevron-down' : 'i-mdi-chevron-up'} text-muted-foreground text-xl`} />
-          </View>
-        </View>
       </View>
 
-      {!collapsed && (
-        <View className="mt-4 flex flex-col gap-4">
+      <View className="mt-4 flex flex-col gap-4">
           <View>
             <Text className="text-base text-muted-foreground mb-2 block">车牌号</Text>
             <View className={`rounded-xl border-2 ${borderColor} bg-background px-3 py-3`}>
               <Input
                 className="w-full text-xl text-foreground"
                 placeholder="输入车牌号搜索"
+                ariaLabel="车牌号"
                 value={plateSearch}
                 onInput={(e) => handlePlateSearch(e.detail.value)}
                 onFocus={() => {
@@ -244,6 +257,9 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                       <View
                         key={plate}
                         className="min-h-12 px-4 py-3 border-b border-border flex items-center"
+                        role="button"
+                        ariaRole="button"
+                        ariaLabel={`选择车牌号${plate}`}
                         onClick={(e) => {
                           e.stopPropagation?.()
                           selectPlate(plate)
@@ -263,6 +279,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
               <Input
                 className="w-full text-lg text-foreground"
                 placeholder="如：越南-桂福"
+                ariaLabel="路线或地点"
                 value={card.route}
                 onInput={(e) => onChange({...card, route: e.detail.value})}
               />
@@ -287,7 +304,12 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                 />
               ))}
             </View>
-            <View className="mt-2 rounded-xl border border-dashed border-primary/60 bg-primary/5 py-3 flex items-center justify-center" onClick={addFeeItem}>
+            <View
+              className="mt-2 rounded-xl border border-dashed border-primary/60 bg-primary/5 py-3 flex items-center justify-center"
+              role="button"
+              ariaRole="button"
+              ariaLabel="添加普通费用"
+              onClick={addFeeItem}>
               <Text className="text-base font-medium text-primary">+ 添加费用</Text>
             </View>
           </View>
@@ -306,6 +328,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                     <Input
                       className="w-full text-lg text-foreground"
                       placeholder="请输入费用名称"
+                      ariaLabel="其他费用名称"
                       value={item.note || ''}
                       onInput={(e) =>
                         updateFeeItem(item.id, {
@@ -320,6 +343,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                       className="w-full text-lg text-right text-foreground"
                       type="digit"
                       placeholder="金额"
+                      ariaLabel={`${item.note || '其他费用'}金额`}
                       value={item.amount > 0 ? String(item.amount) : ''}
                       onInput={(e) =>
                         updateFeeItem(item.id, {
@@ -330,14 +354,22 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                     />
                   </View>
                   <View
-                    className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                    className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                    role="button"
+                    ariaRole="button"
+                    ariaLabel={`删除${item.note || '其他费用'}行`}
                     onClick={() => deleteFeeItem(item.id)}>
                     <View className="i-mdi-close text-destructive text-2xl" />
                   </View>
                 </View>
               ))}
             </View>
-            <View className="mt-2 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5 py-3 flex items-center justify-center" onClick={addOtherFeeItem}>
+            <View
+              className="mt-2 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5 py-3 flex items-center justify-center"
+              role="button"
+              ariaRole="button"
+              ariaLabel="添加其他费用"
+              onClick={addOtherFeeItem}>
               <Text className="text-base font-medium text-emerald-600">+ 添加其他费用</Text>
             </View>
           </View>
@@ -351,18 +383,27 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
                     src={img.path}
                     className="h-full w-full rounded-lg"
                     mode="aspectFill"
+                    ariaLabel={`预览第${index + 1}张凭证图片`}
                     onClick={() => previewImage(index)}
                   />
                   <View
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive flex items-center justify-center"
+                    className="absolute -top-3 -right-3 h-11 w-11 flex items-center justify-center"
+                    role="button"
+                    ariaRole="button"
+                    ariaLabel={`删除第${index + 1}张凭证图片`}
                     onClick={() => deleteImage(index)}>
-                    <View className="i-mdi-close text-white text-sm" />
+                    <View className="h-6 w-6 rounded-full bg-destructive flex items-center justify-center">
+                      <View className="i-mdi-close text-white text-sm" />
+                    </View>
                   </View>
                 </View>
               ))}
               {card.receipt_images.length < 9 && (
                 <View
                   className="h-20 w-20 rounded-lg border border-dashed border-border bg-muted/50 flex flex-col items-center justify-center"
+                  role="button"
+                  ariaRole="button"
+                  ariaLabel="上传凭证图片"
                   onClick={handleChooseImages}>
                   <View className="i-mdi-camera-plus text-muted-foreground text-2xl" />
                   <Text className="text-xs text-muted-foreground mt-1">上传</Text>
@@ -375,8 +416,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange, onDelete
             <Text className="text-base text-foreground font-medium">本车费用小计</Text>
             <Text className="text-xl font-bold text-primary">¥{card.total.toFixed(2)}</Text>
           </View>
-        </View>
-      )}
+      </View>
     </View>
   )
 }

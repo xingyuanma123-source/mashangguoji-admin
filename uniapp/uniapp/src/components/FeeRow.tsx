@@ -46,6 +46,13 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
         <View className="flex flex-row items-center gap-2">
           <View className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-3">
             <View
+              role="button"
+              ariaRole="button"
+              ariaLabel={
+                selectedType
+                  ? `当前费用类型${selectedType.display_name}，点击更改`
+                  : '选择费用类型'
+              }
               onClick={() => setSelectorOpen(true)}>
               <Text className="text-xl text-foreground">{selectedType?.display_name || '选择费用类型'}</Text>
             </View>
@@ -56,12 +63,18 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
               className="w-full text-lg text-right text-foreground"
               type="digit"
               placeholder="金额"
+              ariaLabel={`${selectedType?.display_name || '费用'}金额`}
               value={feeItem.amount > 0 ? String(feeItem.amount) : ''}
               onInput={handleAmountChange}
             />
           </View>
   
-          <View className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-destructive/10" onClick={onDelete}>
+          <View
+            className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+            role="button"
+            ariaRole="button"
+            ariaLabel={`删除${selectedType?.display_name || '费用'}行`}
+            onClick={onDelete}>
             <View className="i-mdi-close text-destructive text-2xl" />
           </View>
         </View>
@@ -72,6 +85,7 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
             <Input
               className="w-full text-base text-foreground"
               placeholder="如：北投、桂福"
+              ariaLabel={`${selectedType?.display_name || '费用'}地点或备注`}
               value={feeItem.note || ''}
               onInput={handleNoteChange}
             />
@@ -99,6 +113,9 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
                       isActive ? 'bg-emerald-500/10' : 'bg-background'
                     }`}
                     style={{minHeight: '52px'}}
+                    role="button"
+                    ariaRole="button"
+                    ariaLabel={`选择${type.display_name}`}
                     onClick={() => {
                       applyFeeType(type)
                       setSelectorOpen(false)
@@ -113,6 +130,9 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
             </ScrollView>
             <View
               className="mt-3 flex items-center justify-center rounded-2xl bg-muted py-4"
+              role="button"
+              ariaRole="button"
+              ariaLabel="取消选择费用类型"
               onClick={() => setSelectorOpen(false)}>
               <Text className="text-lg font-medium text-foreground">取消</Text>
             </View>

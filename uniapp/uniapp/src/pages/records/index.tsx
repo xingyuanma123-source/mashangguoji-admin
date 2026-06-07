@@ -4,6 +4,7 @@ import {useState, useEffect, useCallback} from 'react'
 import Taro, {useDidShow} from '@tarojs/taro'
 import {useAuth} from '@/contexts/AuthContext'
 import {withRouteGuard} from '@/components/RouteGuard'
+import LoadErrorBanner from '@/components/LoadErrorBanner'
 import type {ExpenseRecord, MonthlyStats} from '@/db/types'
 import {getExpenseRecordsByMonth, getMonthlyStats, getOvertimeCount, deleteExpenseRecord} from '@/db/api'
 
@@ -19,6 +20,7 @@ function Records() {
     confirmed_count: 0
   })
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   // 初始化为当月
   useEffect(() => {
@@ -28,26 +30,33 @@ function Records() {
   }, [])
 
   const loadData = useCallback(async () => {
-    if (!driver || !selectedMonth) return
+    if (!driver || !selectedMonth) return false
 
     setLoading(true)
 
     const [year, month] = selectedMonth.split('-').map(Number)
 
-    // 加载记录
-    const {data: recordsData} = await getExpenseRecordsByMonth(driver.id, year, month)
-    setRecords(recordsData)
+    const [recordsRes, statsRes, overtimeRes] = await Promise.all([
+      getExpenseRecordsByMonth(driver.id, year, month),
+      getMonthlyStats(driver.id, year, month),
+      getOvertimeCount(driver.id, year, month)
+    ])
 
-    // 加载统计
-    const {data: statsData} = await getMonthlyStats(driver.id, year, month)
-    const {count: overtimeCount} = await getOvertimeCount(driver.id, year, month)
+    // 任一接口失败：保留上次成功的数据，标记加载失败，不用空/零覆盖
+    if (recordsRes.error || statsRes.error || overtimeRes.error) {
+      setLoadError(true)
+      setLoading(false)
+      return false
+    }
 
+    setLoadError(false)
+    setRecords(recordsRes.data)
     setStats({
-      ...statsData,
-      overtime_count: overtimeCount
+      ...statsRes.data,
+      overtime_count: overtimeRes.count
     })
-
     setLoading(false)
+    return true
   }, [driver, selectedMonth])
 
   useDidShow(() => {
@@ -63,10 +72,10 @@ function Records() {
   }
 
   const handleRefresh = async () => {
-    await loadData()
+    const ok = await loadData()
     Taro.showToast({
-      title: '刷新成功',
-      icon: 'success'
+      title: ok ? '刷新成功' : '刷新失败，请重试',
+      icon: ok ? 'success' : 'none'
     })
   }
 
@@ -119,6 +128,7 @@ function Records() {
     <View className="page-shell">
       <ScrollView className="w-full" scrollY onScrollToUpper={handleRefresh}>
         <View className="px-4 py-5">
+          {loadError && <LoadErrorBanner onRetry={loadData} />}
           <View className="surface-card p-4 mb-4">
             <View className="flex flex-row items-center justify-between mb-3">
               <Text className="text-xl font-semibold text-foreground">报账记录</Text>
@@ -164,7 +174,7 @@ function Records() {
             </View>
           )}
 
-          {!loading && records.length === 0 && (
+          {!loading && !loadError && records.length === 0 && (
             <View className="surface-card py-10 flex flex-col items-center">
               <View className="i-mdi-file-document-outline text-muted-foreground text-5xl mb-3" />
               <Text className="text-base text-muted-foreground">暂无记录</Text>
@@ -181,56 +191,67 @@ function Records() {
                 </View>
 
                 {groupedRecords[date].map((record) => (
-                  <View key={record.id} className="surface-card p-4 mb-2" onClick={() => viewDetail(record)}>
-                    <View className="flex flex-row items-center justify-between mb-2">
-                      <Text className="text-lg font-semibold text-foreground">{record.plate_number}</Text>
-                      {record.status === 'pending' ? (
-                        <View className="soft-chip bg-amber-100 border-amber-200 px-3 py-1">
-                          <Text className="text-sm text-amber-700">待确认</Text>
-                        </View>
-                      ) : (
-                        <View className="soft-chip bg-emerald-100 border-emerald-200 px-3 py-1">
-                          <Text className="text-sm text-emerald-700">已确认</Text>
+                  <View
+                    key={record.id}
+                    className="surface-card p-4 mb-2">
+                    <View
+                      role="button"
+                      ariaRole="button"
+                      ariaLabel={`查看${record.plate_number}报账详情`}
+                      onClick={() => viewDetail(record)}>
+                      <View className="flex flex-row items-center justify-between mb-2">
+                        <Text className="text-lg font-semibold text-foreground">{record.plate_number}</Text>
+                        {record.status === 'pending' ? (
+                          <View className="soft-chip bg-amber-100 border-amber-200 px-3 py-1">
+                            <Text className="text-sm text-amber-700">待确认</Text>
+                          </View>
+                        ) : (
+                          <View className="soft-chip bg-emerald-100 border-emerald-200 px-3 py-1">
+                            <Text className="text-sm text-emerald-700">已确认</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {record.route && (
+                        <Text className="text-sm text-muted-foreground mb-2">路线：{record.route}</Text>
+                      )}
+
+                      <View className="flex flex-row flex-wrap gap-2 mb-3">
+                        {record.fee_weighing > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">过磅 ¥{record.fee_weighing}</Text>}
+                        {record.fee_container > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">提柜 ¥{record.fee_container}</Text>}
+                        {record.fee_overnight > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">过夜 ¥{record.fee_overnight}</Text>}
+                        {record.fee_vn_overtime > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">越南超时 ¥{record.fee_vn_overtime}</Text>}
+                        {record.fee_vn_key > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">收钥匙 ¥{record.fee_vn_key}</Text>}
+                        {record.fee_parking > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">停车 ¥{record.fee_parking}</Text>}
+                        {record.fee_newpost > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">新岗 ¥{record.fee_newpost}</Text>}
+                        {record.fee_taxi > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">打车 ¥{record.fee_taxi}</Text>}
+                        {record.fee_water > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">淋水 ¥{record.fee_water}</Text>}
+                        {record.fee_tarpaulin > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">解篷布 ¥{record.fee_tarpaulin}</Text>}
+                        {record.fee_highway > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">高速 ¥{record.fee_highway}</Text>}
+                        {record.fee_stamp > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">盖章 ¥{record.fee_stamp}</Text>}
+                        {record.note_amount > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">其他 ¥{record.note_amount}</Text>}
+                      </View>
+
+                      <View className="flex flex-row items-center justify-between">
+                        <Text className="text-sm text-muted-foreground">小计</Text>
+                        <Text className="text-lg font-semibold text-primary">¥{record.total_expense.toFixed(2)}</Text>
+                      </View>
+
+                      {record.commission > 0 && (
+                        <View className="mt-1 flex flex-row items-center justify-between">
+                          <Text className="text-sm text-muted-foreground">提成</Text>
+                          <Text className="text-base font-semibold text-green-600">¥{record.commission.toFixed(2)}</Text>
                         </View>
                       )}
                     </View>
-
-                    {record.route && (
-                      <Text className="text-sm text-muted-foreground mb-2">路线：{record.route}</Text>
-                    )}
-
-                    <View className="flex flex-row flex-wrap gap-2 mb-3">
-                      {record.fee_weighing > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">过磅 ¥{record.fee_weighing}</Text>}
-                      {record.fee_container > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">提柜 ¥{record.fee_container}</Text>}
-                      {record.fee_overnight > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">过夜 ¥{record.fee_overnight}</Text>}
-                      {record.fee_vn_overtime > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">越南超时 ¥{record.fee_vn_overtime}</Text>}
-                      {record.fee_vn_key > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">收钥匙 ¥{record.fee_vn_key}</Text>}
-                      {record.fee_parking > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">停车 ¥{record.fee_parking}</Text>}
-                      {record.fee_newpost > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">新岗 ¥{record.fee_newpost}</Text>}
-                      {record.fee_taxi > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">打车 ¥{record.fee_taxi}</Text>}
-                      {record.fee_water > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">淋水 ¥{record.fee_water}</Text>}
-                      {record.fee_tarpaulin > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">解篷布 ¥{record.fee_tarpaulin}</Text>}
-                      {record.fee_highway > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">高速 ¥{record.fee_highway}</Text>}
-                      {record.fee_stamp > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">盖章 ¥{record.fee_stamp}</Text>}
-                      {record.note_amount > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">其他 ¥{record.note_amount}</Text>}
-                    </View>
-
-                    <View className="flex flex-row items-center justify-between">
-                      <Text className="text-sm text-muted-foreground">小计</Text>
-                      <Text className="text-lg font-semibold text-primary">¥{record.total_expense.toFixed(2)}</Text>
-                    </View>
-
-                    {record.commission > 0 && (
-                      <View className="mt-1 flex flex-row items-center justify-between">
-                        <Text className="text-sm text-muted-foreground">提成</Text>
-                        <Text className="text-base font-semibold text-green-600">¥{record.commission.toFixed(2)}</Text>
-                      </View>
-                    )}
 
                     {record.status === 'pending' && (
                       <View className="mt-3 flex flex-row gap-2">
                         <View
                           className="flex-1 rounded-xl bg-primary py-2 flex items-center justify-center"
+                          role="button"
+                          ariaRole="button"
+                          ariaLabel={`编辑${record.plate_number}报账`}
                           onClick={(e) => {
                             e.stopPropagation()
                             editRecord(record)
@@ -239,6 +260,9 @@ function Records() {
                         </View>
                         <View
                           className="flex-1 rounded-xl bg-destructive py-2 flex items-center justify-center"
+                          role="button"
+                          ariaRole="button"
+                          ariaLabel={`删除${record.plate_number}报账`}
                           onClick={(e) => {
                             e.stopPropagation()
                             deleteRecord(record)
