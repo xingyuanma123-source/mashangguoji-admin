@@ -183,6 +183,14 @@ export async function getRecordsPage(_driverId: number, year: number, month: num
   return {data: (data?.data ?? fallback), error: null}
 }
 
+/** 为收据图片路径批量签发临时可读链接（私有桶；兼容旧的完整公开 URL） */
+export async function getSignedImageUrls(paths: string[]) {
+  if (!paths || paths.length === 0) return {data: [] as (string | null)[], error: null}
+  const {data, error} = await callEdge<{data: (string | null)[]}>('/storage/sign', {body: {paths}})
+  if (error) return {data: [] as (string | null)[], error}
+  return {data: (data?.data ?? []) as (string | null)[], error: null}
+}
+
 /** 我的页：一次返回 fund + overtime_count */
 export async function getProfileSummary(_driverId: number, year: number, month: number) {
   const fallback = {

@@ -97,9 +97,10 @@ export async function uploadFile(file: UploadFileInput): Promise<{
         }
       }
 
+      // 私有桶：存储对象路径，显示时由云函数签发临时链接
       return {
         success: true,
-        url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${fileName}`
+        url: fileName
       }
     }
 
@@ -116,12 +117,10 @@ export async function uploadFile(file: UploadFileInput): Promise<{
       }
     }
 
-    // 获取公开URL
-    const {data: urlData} = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path)
-
+    // 私有桶：存储对象路径，显示时由云函数签发临时链接
     return {
       success: true,
-      url: urlData.publicUrl
+      url: data.path
     }
   } catch (error) {
     console.error('上传文件异常:', error)
@@ -183,20 +182,4 @@ export async function chooseImages(maxCount = 9): Promise<UploadFileInput[]> {
     console.error('选择图片失败:', error)
     return []
   }
-}
-
-/**
- * 获取图片公开URL（兼容已有URL和路径）
- */
-export function getImageUrl(pathOrUrl: string): string {
-  if (!pathOrUrl) return ''
-
-  // 如果已经是完整URL，直接返回
-  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
-    return pathOrUrl
-  }
-
-  // 否则从 storage 获取公开URL
-  const {data} = supabase.storage.from(BUCKET_NAME).getPublicUrl(pathOrUrl)
-  return data.publicUrl
 }

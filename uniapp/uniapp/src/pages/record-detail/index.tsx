@@ -4,13 +4,13 @@ import {useState, useEffect, useCallback} from 'react'
 import Taro, {useDidShow} from '@tarojs/taro'
 import {withRouteGuard} from '@/components/RouteGuard'
 import type {ExpenseRecord, OtherFeeItem} from '@/db/types'
-import {getExpenseRecordById} from '@/db/api'
+import {getExpenseRecordById, getSignedImageUrls} from '@/db/api'
 import {parseFeeLocationDetail} from '@/utils/feeLocation'
-import {getImageUrl} from '@/utils/upload'
 
 function RecordDetail() {
   const [record, setRecord] = useState<ExpenseRecord | null>(null)
   const [otherFees, setOtherFees] = useState<OtherFeeItem[]>([])
+  const [signedImages, setSignedImages] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
 
@@ -68,6 +68,16 @@ function RecordDetail() {
 
     setRecord(data)
     setOtherFees(data?.other_fees ?? [])
+
+    // 私有桶：为已存图片换取临时可读链接（按下标对齐，失败留空串）
+    const imgs = data?.receipt_images ?? []
+    if (imgs.length > 0) {
+      const {data: signed} = await getSignedImageUrls(imgs)
+      setSignedImages(imgs.map((_, i) => signed[i] || ''))
+    } else {
+      setSignedImages([])
+    }
+
     setLoading(false)
   }, [])
 
@@ -80,11 +90,11 @@ function RecordDetail() {
   }, [loadData])
 
   const previewImage = (index: number) => {
-    if (!record?.receipt_images) return
-    const urls = record.receipt_images.map((img) => getImageUrl(img))
+    const urls = signedImages.filter(Boolean)
+    if (urls.length === 0) return
     Taro.previewImage({
       urls,
-      current: urls[index]
+      current: signedImages[index] || urls[0]
     })
   }
 
@@ -217,7 +227,7 @@ function RecordDetail() {
                 {record.receipt_images.map((img, index) => (
                   <Image
                     key={index}
-                    src={getImageUrl(img)}
+                    src={signedImages[index] || ''}
                     className="w-32 h-32 rounded-xl"
                     mode="aspectFill"
                     ariaLabel={`预览第${index + 1}张凭证图片`}

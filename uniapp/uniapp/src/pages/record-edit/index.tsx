@@ -4,10 +4,10 @@ import Taro, {useDidShow} from '@tarojs/taro'
 import {useCallback, useEffect, useState} from 'react'
 import FeeRow from '@/components/FeeRow'
 import {withRouteGuard} from '@/components/RouteGuard'
-import {checkVehicleExists, fetchOtherFees, getExpenseRecordById, getFeeTypes, updateExpenseRecord} from '@/db/api'
+import {checkVehicleExists, fetchOtherFees, getExpenseRecordById, getFeeTypes, getSignedImageUrls, updateExpenseRecord} from '@/db/api'
 import type {ExpenseRecord, FeeItem, FeeType, OtherFeeItem, UploadFileInput} from '@/db/types'
 import {type FeeLocationItem, parseFeeLocationDetail} from '@/utils/feeLocation'
-import {chooseImages, getImageUrl, uploadFiles} from '@/utils/upload'
+import {chooseImages, uploadFiles} from '@/utils/upload'
 import {validateFeeItems} from '@/utils/validateFees'
 
 function RecordEdit() {
@@ -18,6 +18,7 @@ function RecordEdit() {
   const [feeItems, setFeeItems] = useState<FeeItem[]>([])
   const [receiptImages, setReceiptImages] = useState<UploadFileInput[]>([])
   const [existingImages, setExistingImages] = useState<string[]>([])
+  const [signedExisting, setSignedExisting] = useState<string[]>([])
   const [note, setNote] = useState('')
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
   const [loading, setLoading] = useState(false)
@@ -59,7 +60,15 @@ function RecordEdit() {
     setRecordDate(recordData.record_date || '')
     setPlateNumber(recordData.plate_number)
     setRoute(recordData.route || '')
-    setExistingImages(recordData.receipt_images || [])
+    const existing = recordData.receipt_images || []
+    setExistingImages(existing)
+    // 私有桶：为已存图片换取临时可读链接（按下标对齐）
+    if (existing.length > 0) {
+      const {data: signed} = await getSignedImageUrls(existing)
+      setSignedExisting(existing.map((_, i) => signed[i] || ''))
+    } else {
+      setSignedExisting([])
+    }
 
     // 构建费用项
     const items: FeeItem[] = []
@@ -249,13 +258,13 @@ function RecordEdit() {
   }
 
   const deleteExistingImage = (index: number) => {
-    const newImages = existingImages.filter((_, i) => i !== index)
-    setExistingImages(newImages)
+    setExistingImages(existingImages.filter((_, i) => i !== index))
+    setSignedExisting(signedExisting.filter((_, i) => i !== index))
   }
 
   const previewImage = (url: string) => {
     const allUrls = [
-      ...existingImages.map((img) => getImageUrl(img)),
+      ...signedExisting.filter(Boolean),
       ...receiptImages.map((img) => img.path)
     ]
     Taro.previewImage({
@@ -560,11 +569,11 @@ function RecordEdit() {
                   {existingImages.map((img, index) => (
                     <View key={img} className="relative w-24 h-24">
                       <Image
-                        src={getImageUrl(img)}
+                        src={signedExisting[index] || ''}
                         className="w-full h-full rounded-xl"
                         mode="aspectFill"
                         ariaLabel={`预览第${index + 1}张已有凭证图片`}
-                        onClick={() => previewImage(getImageUrl(img))}
+                        onClick={() => previewImage(signedExisting[index] || '')}
                       />
                       <View
                         className="absolute -top-2 -right-2 h-11 w-11 flex items-center justify-center"
