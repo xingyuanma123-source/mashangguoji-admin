@@ -4,7 +4,7 @@ import {useState, useEffect, useCallback} from 'react'
 import Taro, {useDidShow} from '@tarojs/taro'
 import {withRouteGuard} from '@/components/RouteGuard'
 import type {ExpenseRecord, OtherFeeItem} from '@/db/types'
-import {fetchOtherFees, getExpenseRecordById} from '@/db/api'
+import {getExpenseRecordById} from '@/db/api'
 import {parseFeeLocationDetail} from '@/utils/feeLocation'
 import {getImageUrl} from '@/utils/upload'
 
@@ -56,20 +56,18 @@ function RecordDetail() {
     setLoading(true)
     setLoadError(false)
     const recordId = Number(id)
-    const [recordRes, otherFeesRes] = await Promise.all([
-      getExpenseRecordById(recordId),
-      fetchOtherFees(recordId)
-    ])
+    // 详情接口已内含其他费用，一次返回即可
+    const {data, error} = await getExpenseRecordById(recordId)
 
     // 加载失败：标记错误，不要当成"记录不存在"
-    if (recordRes.error || otherFeesRes.error) {
+    if (error) {
       setLoadError(true)
       setLoading(false)
       return
     }
 
-    setRecord(recordRes.data)
-    setOtherFees(otherFeesRes.data)
+    setRecord(data)
+    setOtherFees(data?.other_fees ?? [])
     setLoading(false)
   }, [])
 
