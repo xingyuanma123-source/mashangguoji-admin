@@ -1,7 +1,7 @@
 // 报账提交页（首页）
 import {Button, Image, Picker, ScrollView, Switch, Text, View} from '@tarojs/components'
 import Taro, {useDidShow} from '@tarojs/taro'
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 import {withRouteGuard} from '@/components/RouteGuard'
 import VehicleCardComponent from '@/components/VehicleCard'
 import {useAuth} from '@/contexts/AuthContext'
@@ -12,21 +12,33 @@ import {validateFeeItems} from '@/utils/validateFees'
 
 const STORAGE_KEY = 'expense_draft'
 
+// 今天日期 YYYY-MM-DD
+function getTodayStr() {
+  const today = new Date()
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+}
+
+// YYYY-MM-DD → M月D日（用于合计标题）
+function formatDateLabel(d: string) {
+  const parts = d.split('-')
+  if (parts.length !== 3) return d || '本次'
+  return `${Number(parts[1])}月${Number(parts[2])}日`
+}
+
 function Submit() {
   const {driver} = useAuth()
-  const [selectedDate, setSelectedDate] = useState('')
+  const [selectedDate, setSelectedDate] = useState(getTodayStr)
   const [isOvertime, setIsOvertime] = useState(false)
   const [vehicles, setVehicles] = useState<VehicleCard[]>([])
   const [activeVehicleIndex, setActiveVehicleIndex] = useState(0)
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
   const [loading, setLoading] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  // 草稿恢复只在首次进入时检查一次（与默认日期解耦）
+  const draftCheckedRef = useRef(false)
 
   // 今天日期（用于快捷按钮）
-  const todayStr = (() => {
-    const today = new Date()
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  })()
+  const todayStr = getTodayStr()
 
   // 加载费用类型
   useEffect(() => {
@@ -49,8 +61,9 @@ function Submit() {
 
   // 恢复暂存
   useDidShow(() => {
-    // 当前页面已有内容（用户正在操作或刚从相册返回），不弹提示
-    if (vehicles.length > 0 || selectedDate) return
+    // 只在首次进入时检查一次：避免从相册返回等重复弹窗，也不依赖日期是否为空
+    if (draftCheckedRef.current) return
+    draftCheckedRef.current = true
 
     const draft = Taro.getStorageSync(STORAGE_KEY)
     if (!draft || !draft.vehicles) return
@@ -69,7 +82,7 @@ function Submit() {
       content: '检测到上次未提交的报账记录，是否恢复？',
       success: (res) => {
         if (res.confirm) {
-          setSelectedDate(draft.selectedDate || '')
+          setSelectedDate(draft.selectedDate || getTodayStr())
           setIsOvertime(draft.isOvertime || false)
           setVehicles(draft.vehicles || [])
         } else {
@@ -488,7 +501,7 @@ function Submit() {
       <View className="border-t border-border bg-background/95 px-4 pb-6 pt-4">
         <View className="surface-card bg-primary/10 p-4 mb-2">
             <View className="flex flex-row items-center justify-between">
-              <Text className="text-base text-foreground font-medium">今日费用合计</Text>
+              <Text className="text-base text-foreground font-medium">{formatDateLabel(selectedDate)}费用合计</Text>
               <Text className="text-2xl font-bold text-primary">¥{getTotalExpense().toFixed(2)}</Text>
             </View>
           </View>
