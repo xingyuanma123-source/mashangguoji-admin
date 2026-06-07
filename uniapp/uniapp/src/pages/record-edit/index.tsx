@@ -46,7 +46,7 @@ function RecordEdit() {
 
     if (recordData.status !== 'pending') {
       Taro.showToast({
-        title: '已确认的记录不可编辑',
+        title: '这条记录已确认，不能修改',
         icon: 'none'
       })
       setTimeout(() => {
