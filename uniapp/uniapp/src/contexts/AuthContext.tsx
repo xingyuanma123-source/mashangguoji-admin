@@ -3,6 +3,7 @@ import Taro from '@tarojs/taro'
 import {supabase} from '@/client/supabase'
 import type {User} from '@supabase/supabase-js'
 import {getDriverById, verifyDriverLogin, type Driver} from '@/db/api'
+import {clearDriverToken, getDriverToken} from '@/db/edge'
 
 export interface Profile {
   [key: string]: unknown
@@ -53,9 +54,13 @@ export function AuthProvider({children}: {children: ReactNode}) {
   }
 
   useEffect(() => {
-    // 检查本地是否有司机登录信息
+    // 检查本地是否有司机登录信息（需同时持有令牌）
     const driverInfo = Taro.getStorageSync('driver_info')
-    if (driverInfo) {
+    const driverToken = getDriverToken()
+    if (driverInfo && !driverToken) {
+      // 有登录信息但无令牌（旧版本升级 / 令牌已失效）→ 视为未登录
+      Taro.removeStorageSync('driver_info')
+    } else if (driverInfo && driverToken) {
       setDriver(driverInfo)
       setLoading(false)
       getDriverById(driverInfo.id).then(({data, error}) => {
@@ -240,6 +245,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    clearDriverToken()
     Taro.removeStorageSync('driver_info')
     setUser(null)
     setProfile(null)
