@@ -100,7 +100,7 @@ function RecordDetail() {
 
   if (loading) {
     return (
-      <View className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center">
+      <View className="page-shell flex flex-col items-center justify-center">
         <View className="i-mdi-loading animate-spin text-primary text-6xl mb-4" />
         <Text className="text-xl text-muted-foreground">加载中...</Text>
       </View>
@@ -109,16 +109,16 @@ function RecordDetail() {
 
   if (loadError) {
     return (
-      <View className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center px-8">
+      <View className="page-shell flex flex-col items-center justify-center px-8">
         <View className="i-mdi-cloud-alert-outline text-destructive text-6xl mb-4" />
         <Text className="text-2xl text-muted-foreground mb-5">加载失败，请检查网络</Text>
         <View
-          className="rounded-xl bg-primary px-8 py-3"
+          className="btn-jumbo rounded-xl bg-primary px-10 flex items-center justify-center"
           role="button"
           ariaRole="button"
           ariaLabel="重试加载"
           onClick={loadData}>
-          <Text className="text-lg text-primary-foreground font-medium">重试</Text>
+          <Text className="text-xl text-primary-foreground font-medium">重试</Text>
         </View>
       </View>
     )
@@ -126,7 +126,7 @@ function RecordDetail() {
 
   if (!record) {
     return (
-      <View className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center">
+      <View className="page-shell flex flex-col items-center justify-center">
         <View className="i-mdi-alert-circle text-muted-foreground text-6xl mb-4" />
         <Text className="text-2xl text-muted-foreground">记录不存在</Text>
       </View>
@@ -134,19 +134,19 @@ function RecordDetail() {
   }
 
   return (
-    <View className="min-h-screen bg-gradient-subtle">
+    <View className="page-shell">
       <ScrollView className="w-full" scrollY>
         <View className="px-4 py-6">
-          <View className="bg-card rounded-2xl p-6 shadow-elegant mb-6">
+          <View className="surface-card p-5 mb-4">
             <View className="flex flex-row items-center justify-between mb-4">
-              <Text className="text-3xl font-bold text-foreground">{record.plate_number}</Text>
+              <Text className="text-plate text-foreground">{record.plate_number}</Text>
               {record.status === 'pending' ? (
-                <View className="bg-orange-100 px-4 py-2 rounded-xl">
-                  <Text className="text-xl text-orange-600 font-semibold">⏳ 待确认</Text>
+                <View className="soft-chip bg-amber-100 border-amber-200 px-4 py-2">
+                  <Text className="text-xl text-amber-700 font-semibold">待确认</Text>
                 </View>
               ) : (
-                <View className="bg-green-100 px-4 py-2 rounded-xl">
-                  <Text className="text-xl text-green-600 font-semibold">✅ 已确认</Text>
+                <View className="soft-chip bg-emerald-100 border-emerald-200 px-4 py-2">
+                  <Text className="text-xl text-emerald-700 font-semibold">已确认</Text>
                 </View>
               )}
             </View>
@@ -166,7 +166,7 @@ function RecordDetail() {
             </View>
           </View>
 
-          <View className="bg-card rounded-2xl p-6 shadow-elegant mb-6">
+          <View className="surface-card p-5 mb-4">
             <Text className="text-2xl font-semibold text-foreground mb-4">费用明细</Text>
             <View className="flex flex-col space-y-3">
               {renderFeeItem('过磅费', record.fee_weighing)}
@@ -204,7 +204,7 @@ function RecordDetail() {
 
               <View className="flex flex-row items-center justify-between">
                 <Text className="text-2xl text-foreground font-semibold">费用合计</Text>
-                <Text className="text-3xl font-bold text-primary">
+                <Text className="text-money-hero text-primary">
                   ¥{record.total_expense.toFixed(2)}
                 </Text>
               </View>
@@ -212,7 +212,7 @@ function RecordDetail() {
               {record.commission > 0 && (
                 <View className="flex flex-row items-center justify-between">
                   <Text className="text-2xl text-foreground font-semibold">提成</Text>
-                  <Text className="text-3xl font-bold text-green-600">
+                  <Text className="text-money text-green-700">
                     ¥{record.commission.toFixed(2)}
                   </Text>
                 </View>
@@ -221,7 +221,7 @@ function RecordDetail() {
           </View>
 
           {record.receipt_images && record.receipt_images.length > 0 && (
-            <View className="bg-card rounded-2xl p-6 shadow-elegant mb-6">
+            <View className="surface-card p-5 mb-4">
               <Text className="text-2xl font-semibold text-foreground mb-4">凭证图片</Text>
               <View className="flex flex-row flex-wrap gap-3">
                 {record.receipt_images.map((img, index) => (
@@ -239,7 +239,7 @@ function RecordDetail() {
           )}
 
           {record.status === 'confirmed' && (
-            <View className="bg-card rounded-2xl p-6 shadow-elegant mb-6">
+            <View className="surface-card p-5 mb-4">
               <Text className="text-2xl font-semibold text-foreground mb-4">确认信息</Text>
               <View className="flex flex-col space-y-3">
                 {record.confirmed_by && (

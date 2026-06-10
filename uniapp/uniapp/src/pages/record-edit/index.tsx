@@ -435,7 +435,7 @@ function RecordEdit() {
 
   if (!record) {
     return (
-      <View className="min-h-screen bg-gradient-subtle flex flex-col items-center justify-center">
+      <View className="page-shell flex flex-col items-center justify-center">
         <View className="i-mdi-loading animate-spin text-primary text-6xl mb-4" />
         <Text className="text-xl text-muted-foreground">加载中...</Text>
       </View>
@@ -447,25 +447,25 @@ function RecordEdit() {
   const normalFeeTypes = feeTypes.filter((item) => item.field_name !== 'other')
 
   return (
-    <View className="min-h-screen bg-gradient-subtle">
+    <View className="page-shell">
       <ScrollView className="w-full" scrollY>
         <View className="px-4 py-6">
-          <View className="bg-card rounded-2xl p-6 shadow-elegant mb-6">
+          <View className="surface-card p-5 mb-6">
             <View className="flex flex-col space-y-4">
               <View className="flex flex-col space-y-2">
                 <Text className="text-xl text-foreground font-medium">报账日期</Text>
                 <Picker mode="date" value={recordDate} onChange={(e) => setRecordDate(e.detail.value)}>
-                  <View className="bg-input rounded-xl border border-border px-4 py-4">
-                    <Text className="text-foreground text-xl">{recordDate || '请选择日期'}</Text>
+                  <View className="field-box bg-input rounded-xl border-2 border-border px-4">
+                    <Text className="text-foreground text-2xl font-semibold">{recordDate || '请选择日期'}</Text>
                   </View>
                 </Picker>
               </View>
 
               <View className="flex flex-col space-y-2">
                 <Text className="text-xl text-foreground font-medium">车牌号</Text>
-                <View className="bg-input rounded-xl border border-border px-4 py-4">
+                <View className="field-box bg-input rounded-xl border-2 border-border px-4">
                   <Input
-                    className="w-full text-foreground text-xl"
+                    className="w-full input-plate text-foreground"
                     placeholder="请输入车牌号"
                     value={plateNumber}
                     onInput={(e) => setPlateNumber(e.detail.value)}
@@ -475,7 +475,7 @@ function RecordEdit() {
 
               <View className="flex flex-col space-y-2">
                 <Text className="text-xl text-foreground font-medium">路线/地点（选填）</Text>
-                <View className="bg-input rounded-xl border border-border px-4 py-4">
+                <View className="field-box bg-input rounded-xl border border-border px-4">
                   <Input
                     className="w-full text-foreground text-xl"
                     placeholder="如：越南—桂福"
@@ -499,13 +499,12 @@ function RecordEdit() {
                   ))}
                 </View>
                 <View
-                  className="flex flex-row items-center justify-center py-3 bg-muted rounded-xl"
+                  className="flex flex-row items-center justify-center py-4 rounded-xl border border-dashed border-primary/60 bg-primary/5"
                   role="button"
                   ariaRole="button"
                   ariaLabel="添加普通费用"
                   onClick={addFeeItem}>
-                  <View className="i-mdi-plus-circle text-primary text-2xl mr-2" />
-                  <Text className="text-xl text-primary font-medium">添加费用</Text>
+                  <Text className="text-2xl text-primary font-medium">+ 添加费用</Text>
                 </View>
               </View>
 
@@ -514,7 +513,7 @@ function RecordEdit() {
                 <View className="flex flex-col gap-2">
                   {otherFeeItems.map((item) => (
                     <View key={item.id} className="flex flex-row items-center gap-3">
-                      <View className="min-w-0 basis-3/5 bg-input rounded-xl border border-border px-4 py-4">
+                      <View className="field-box min-w-0 basis-3/5 bg-input rounded-xl border border-border px-4">
                         <Input
                           className="w-full text-foreground text-xl"
                           placeholder="请输入费用名称"
@@ -527,9 +526,9 @@ function RecordEdit() {
                           }
                         />
                       </View>
-                      <View className="basis-2/5 bg-input rounded-xl border border-border px-4 py-4">
+                      <View className="field-box basis-2/5 bg-input rounded-xl border border-border px-4">
                         <Input
-                          className="w-full text-right text-foreground text-xl"
+                          className="w-full h-9 text-right text-foreground text-2xl"
                           type="digit"
                           placeholder="金额"
                           value={item.amount > 0 ? String(item.amount) : ''}
@@ -542,7 +541,7 @@ function RecordEdit() {
                         />
                       </View>
                       <View
-                        className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                        className="tap-target shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
                         role="button"
                         ariaRole="button"
                         ariaLabel={`删除${item.note || '其他费用'}行`}
@@ -553,13 +552,12 @@ function RecordEdit() {
                   ))}
                 </View>
                 <View
-                  className="flex flex-row items-center justify-center py-3 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5"
+                  className="flex flex-row items-center justify-center py-4 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5"
                   role="button"
                   ariaRole="button"
                   ariaLabel="添加其他费用"
                   onClick={addOtherFeeItem}>
-                  <View className="i-mdi-plus-circle text-emerald-600 text-2xl mr-2" />
-                  <Text className="text-xl text-emerald-600 font-medium">添加其他费用</Text>
+                  <Text className="text-2xl text-emerald-600 font-medium">+ 添加其他费用</Text>
                 </View>
               </View>
 
@@ -576,7 +574,7 @@ function RecordEdit() {
                         onClick={() => previewImage(signedExisting[index] || '')}
                       />
                       <View
-                        className="absolute -top-2 -right-2 h-11 w-11 flex items-center justify-center"
+                        className="absolute -top-2 -right-2 tap-target flex items-center justify-center"
                         role="button"
                         ariaRole="button"
                         ariaLabel={`删除第${index + 1}张已有凭证图片`}
@@ -597,7 +595,7 @@ function RecordEdit() {
                         onClick={() => previewImage(img.path)}
                       />
                       <View
-                        className="absolute -top-2 -right-2 h-11 w-11 flex items-center justify-center"
+                        className="absolute -top-2 -right-2 tap-target flex items-center justify-center"
                         role="button"
                         ariaRole="button"
                         ariaLabel={`删除第${existingImages.length + index + 1}张新凭证图片`}
@@ -642,7 +640,7 @@ function RecordEdit() {
             className="w-full bg-primary text-primary-foreground text-2xl font-semibold rounded-2xl mb-6"
             onClick={handleSave}
             disabled={loading}>
-            <View className="py-4">
+            <View className="btn-jumbo flex items-center justify-center">
               <Text>{loading ? '保存中...' : '保存修改'}</Text>
             </View>
           </Button>

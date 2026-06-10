@@ -101,17 +101,17 @@ export default function Legal() {
         <View className="px-4 py-5">
           <View className="surface-card p-5 mb-4">
             <Text className="text-2xl font-bold text-foreground block">{title}</Text>
-            <Text className="text-sm text-muted-foreground mt-2 block">更新日期：2026年6月7日</Text>
-            <Text className="text-sm text-muted-foreground mt-3 block">
+            <Text className="text-base text-muted-foreground mt-2 block">更新日期：2026年6月7日</Text>
+            <Text className="text-base text-muted-foreground mt-3 block">
               本说明适用于公司内部司机报账系统。如与公司正式制度或通知不一致，以公司正式制度或通知为准。
             </Text>
           </View>
 
           {sections.map((section) => (
             <View key={section.title} className="surface-card p-5 mb-4">
-              <Text className="text-lg font-semibold text-foreground mb-3 block">{section.title}</Text>
+              <Text className="text-xl font-semibold text-foreground mb-3 block">{section.title}</Text>
               {section.paragraphs.map((paragraph) => (
-                <Text key={paragraph} className="text-base text-muted-foreground leading-7 mb-3 last:mb-0 block">
+                <Text key={paragraph} className="text-lg text-muted-foreground leading-8 mb-3 last:mb-0 block">
                   {paragraph}
                 </Text>
               ))}

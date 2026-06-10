@@ -6,9 +6,12 @@ import {withRouteGuard, STORAGE_KEY_REDIRECT_PATH} from '@/components/RouteGuard
 
 function Login() {
   const {signInWithDriver} = useAuth()
-  const [username, setUsername] = useState('')
+  // 记住上次登录账号：司机重新登录时免去重输
+  const [username, setUsername] = useState<string>(() => Taro.getStorageSync('last_login_username') || '')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [agreed, setAgreed] = useState(false)
+  const [agreeHint, setAgreeHint] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const openLegal = (type: 'agreement' | 'privacy') => {
@@ -33,6 +36,7 @@ function Login() {
     }
 
     if (!agreed) {
+      setAgreeHint(true)
       Taro.showToast({
         title: '请先阅读并同意用户协议和隐私政策',
         icon: 'none'
@@ -42,7 +46,7 @@ function Login() {
 
     setLoading(true)
 
-    const {error} = await signInWithDriver(username, password)
+    const {error} = await signInWithDriver(username.trim(), password)
 
     setLoading(false)
 
@@ -53,6 +57,8 @@ function Login() {
       })
       return
     }
+
+    Taro.setStorageSync('last_login_username', username.trim())
 
     Taro.showToast({
       title: '登录成功',
@@ -82,7 +88,7 @@ function Login() {
   }
 
   return (
-    <View className="min-h-screen bg-gradient-subtle flex flex-col">
+    <View className="page-shell flex flex-col">
       <View className="flex-1 flex flex-col items-center justify-center px-8">
         <View className="w-full max-w-md">
           <View className="flex flex-col items-center mb-12">
@@ -95,13 +101,14 @@ function Login() {
             <Text className="text-xl text-muted-foreground">广西马上国际货代专用</Text>
           </View>
 
-          <View className="bg-card rounded-2xl p-8 shadow-elegant">
+          <View className="surface-card p-6">
             <View className="flex flex-col space-y-6">
               <View className="flex flex-col space-y-2">
                 <Text className="text-xl text-foreground font-medium">账号</Text>
-                <View className="bg-input rounded-xl border border-border px-4 py-4">
+                <View className="field-box bg-input rounded-xl border border-border px-4">
+                  <View className="i-mdi-account-outline text-muted-foreground text-2xl mr-2 shrink-0" />
                   <Input
-                    className="w-full text-foreground text-xl"
+                    className="h-9 min-w-0 flex-1 text-foreground text-2xl"
                     placeholder="请输入账号"
                     ariaLabel="账号"
                     value={username}
@@ -112,34 +119,48 @@ function Login() {
 
               <View className="flex flex-col space-y-2">
                 <Text className="text-xl text-foreground font-medium">密码</Text>
-                <View className="bg-input rounded-xl border border-border px-4 py-4">
+                <View className="field-box bg-input rounded-xl border border-border px-4">
+                  <View className="i-mdi-lock-outline text-muted-foreground text-2xl mr-2 shrink-0" />
                   <Input
-                    className="w-full text-foreground text-xl"
+                    className="h-9 min-w-0 flex-1 text-foreground text-2xl"
                     placeholder="请输入密码"
                     ariaLabel="密码"
-                    password
+                    password={!showPassword}
+                    confirmType="done"
                     value={password}
                     onInput={(e) => setPassword(e.detail.value)}
+                    onConfirm={handleLogin}
                   />
+                  <View
+                    className="tap-target -mr-3 shrink-0 flex items-center justify-center"
+                    role="button"
+                    ariaRole="button"
+                    ariaLabel={showPassword ? '隐藏密码' : '显示密码'}
+                    onClick={() => setShowPassword(!showPassword)}>
+                    <View className={`${showPassword ? 'i-mdi-eye-off-outline' : 'i-mdi-eye-outline'} text-muted-foreground text-2xl`} />
+                  </View>
                 </View>
               </View>
 
-              <View className="flex flex-row items-start">
+              <View className="flex flex-row items-center">
                 <View
-                  className="h-11 w-11 -ml-2 flex items-center justify-center flex-shrink-0"
+                  className="tap-target -ml-2 flex items-center justify-center flex-shrink-0"
                   role="checkbox"
                   ariaRole="checkbox"
                   ariaLabel={agreed ? '已同意用户协议和隐私政策，点击取消同意' : '未同意用户协议和隐私政策，点击同意'}
-                  onClick={() => setAgreed(!agreed)}>
+                  onClick={() => {
+                    setAgreeHint(false)
+                    setAgreed(!agreed)
+                  }}>
                   <View
-                    className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
-                      agreed ? 'bg-primary border-primary' : 'bg-background border-border'
+                    className={`w-7 h-7 rounded border-2 flex items-center justify-center ${
+                      agreed ? 'bg-primary border-primary' : agreeHint ? 'bg-background border-destructive' : 'bg-background border-border'
                     }`}>
                     {agreed && <View className="i-mdi-check text-primary-foreground text-xl" />}
                   </View>
                 </View>
-                <View className="flex-1 flex flex-row flex-wrap items-center pt-2">
-                  <Text className="text-lg text-muted-foreground">我已阅读并同意</Text>
+                <View className="flex-1 flex flex-row flex-wrap items-center">
+                  <Text className={`text-lg ${agreeHint ? 'text-destructive' : 'text-muted-foreground'}`}>已阅读并同意</Text>
                   <View
                     className="inline-flex"
                     role="link"
@@ -148,7 +169,6 @@ function Login() {
                     onClick={() => openLegal('agreement')}>
                     <Text className="text-lg text-primary">《用户协议》</Text>
                   </View>
-                  <Text className="text-lg text-muted-foreground">和</Text>
                   <View
                     className="inline-flex"
                     role="link"
@@ -161,10 +181,10 @@ function Login() {
               </View>
 
               <Button
-                className="w-full bg-primary text-primary-foreground text-xl font-medium rounded-xl"
+                className="w-full bg-primary text-primary-foreground text-2xl font-medium rounded-xl"
                 onClick={handleLogin}
                 disabled={loading}>
-                <View className="py-4">
+                <View className="btn-jumbo flex items-center justify-center">
                   <Text>{loading ? '登录中...' : '登录'}</Text>
                 </View>
               </Button>

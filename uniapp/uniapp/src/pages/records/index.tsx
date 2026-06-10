@@ -125,38 +125,38 @@ function Records() {
           {loadError && <LoadErrorBanner onRetry={loadData} />}
           <View className="surface-card p-4 mb-4">
             <View className="flex flex-row items-center justify-between mb-3">
-              <Text className="text-xl font-semibold text-foreground">报账记录</Text>
+              <Text className="text-2xl font-semibold text-foreground">报账记录</Text>
               <View className="soft-chip px-3 py-1">
-                <Text className="text-sm text-muted-foreground">{records.length} 条</Text>
+                <Text className="text-lg text-muted-foreground">{records.length} 条</Text>
               </View>
             </View>
 
             <Picker mode="date" fields="month" value={selectedMonth} onChange={handleMonthChange}>
-              <View className="rounded-xl border border-border bg-background px-3 py-3 flex flex-row items-center justify-between">
-                <Text className="text-base text-muted-foreground">月份</Text>
-                <Text className="text-base text-foreground font-medium">{selectedMonth}</Text>
+              <View className="field-box rounded-xl border border-border bg-background px-4 flex flex-row items-center justify-between">
+                <Text className="text-xl text-muted-foreground">月份</Text>
+                <Text className="text-2xl text-foreground font-semibold">{selectedMonth}</Text>
               </View>
             </Picker>
           </View>
 
           <View className="surface-card p-4 mb-4">
-            <Text className="text-lg font-semibold text-foreground mb-3">本月统计</Text>
+            <Text className="text-xl font-semibold text-foreground mb-3">本月统计</Text>
             <View className="grid grid-cols-2 gap-2">
-              <View className="rounded-xl bg-red-50 px-3 py-3">
-                <Text className="text-sm text-red-500">支出合计</Text>
-                <Text className="text-lg text-red-600 font-semibold">¥{stats.total_expense.toFixed(2)}</Text>
+              <View className="rounded-xl bg-red-100 px-3 py-3">
+                <Text className="text-lg text-red-700">支出合计</Text>
+                <Text className="text-2xl text-red-700 font-bold">¥{stats.total_expense.toFixed(2)}</Text>
               </View>
-              <View className="rounded-xl bg-green-50 px-3 py-3">
-                <Text className="text-sm text-green-600">提成合计</Text>
-                <Text className="text-lg text-green-700 font-semibold">¥{stats.total_commission.toFixed(2)}</Text>
+              <View className="rounded-xl bg-green-100 px-3 py-3">
+                <Text className="text-lg text-green-700">提成合计</Text>
+                <Text className="text-2xl text-green-700 font-bold">¥{stats.total_commission.toFixed(2)}</Text>
               </View>
-              <View className="rounded-xl bg-blue-50 px-3 py-3">
-                <Text className="text-sm text-blue-500">加班次数</Text>
-                <Text className="text-lg text-blue-700 font-semibold">{stats.overtime_count} 次</Text>
+              <View className="rounded-xl bg-blue-100 px-3 py-3">
+                <Text className="text-lg text-blue-700">加班次数</Text>
+                <Text className="text-2xl text-blue-700 font-bold">{stats.overtime_count} 次</Text>
               </View>
-              <View className="rounded-xl bg-amber-50 px-3 py-3">
-                <Text className="text-sm text-amber-600">待确认</Text>
-                <Text className="text-lg text-amber-700 font-semibold">{stats.pending_count} 条</Text>
+              <View className="rounded-xl bg-amber-100 px-3 py-3">
+                <Text className="text-lg text-amber-700">待确认</Text>
+                <Text className="text-2xl text-amber-700 font-bold">{stats.pending_count} 条</Text>
               </View>
             </View>
           </View>
@@ -164,14 +164,14 @@ function Records() {
           {loading && (
             <View className="surface-card py-10 flex flex-col items-center">
               <View className="i-mdi-loading animate-spin text-primary text-5xl mb-3" />
-              <Text className="text-base text-muted-foreground">加载中...</Text>
+              <Text className="text-xl text-muted-foreground">加载中...</Text>
             </View>
           )}
 
           {!loading && !loadError && records.length === 0 && (
             <View className="surface-card py-10 flex flex-col items-center">
               <View className="i-mdi-file-document-outline text-muted-foreground text-5xl mb-3" />
-              <Text className="text-base text-muted-foreground">暂无记录</Text>
+              <Text className="text-xl text-muted-foreground">暂无记录</Text>
             </View>
           )}
 
@@ -180,7 +180,7 @@ function Records() {
               <View key={date} className="mb-4">
                 <View className="flex flex-row items-center mb-2">
                   <View className="h-px flex-1 bg-border" />
-                  <Text className="px-3 text-sm text-muted-foreground">{date}</Text>
+                  <Text className="px-3 text-lg text-muted-foreground">{date}</Text>
                   <View className="h-px flex-1 bg-border" />
                 </View>
 
@@ -194,47 +194,47 @@ function Records() {
                       ariaLabel={`查看${record.plate_number}报账详情`}
                       onClick={() => viewDetail(record)}>
                       <View className="flex flex-row items-center justify-between mb-2">
-                        <Text className="text-lg font-semibold text-foreground">{record.plate_number}</Text>
+                        <Text className="text-2xl font-semibold text-foreground">{record.plate_number}</Text>
                         {record.status === 'pending' ? (
                           <View className="soft-chip bg-amber-100 border-amber-200 px-3 py-1">
-                            <Text className="text-sm text-amber-700">待确认</Text>
+                            <Text className="text-lg text-amber-700">待确认</Text>
                           </View>
                         ) : (
                           <View className="soft-chip bg-emerald-100 border-emerald-200 px-3 py-1">
-                            <Text className="text-sm text-emerald-700">已确认</Text>
+                            <Text className="text-lg text-emerald-700">已确认</Text>
                           </View>
                         )}
                       </View>
 
                       {record.route && (
-                        <Text className="text-sm text-muted-foreground mb-2">路线：{record.route}</Text>
+                        <Text className="text-lg text-muted-foreground mb-2">路线：{record.route}</Text>
                       )}
 
                       <View className="flex flex-row flex-wrap gap-2 mb-3">
-                        {record.fee_weighing > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">过磅 ¥{record.fee_weighing}</Text>}
-                        {record.fee_container > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">提柜 ¥{record.fee_container}</Text>}
-                        {record.fee_overnight > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">过夜 ¥{record.fee_overnight}</Text>}
-                        {record.fee_vn_overtime > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">越南超时 ¥{record.fee_vn_overtime}</Text>}
-                        {record.fee_vn_key > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">收钥匙 ¥{record.fee_vn_key}</Text>}
-                        {record.fee_parking > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">停车 ¥{record.fee_parking}</Text>}
-                        {record.fee_newpost > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">新岗 ¥{record.fee_newpost}</Text>}
-                        {record.fee_taxi > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">打车 ¥{record.fee_taxi}</Text>}
-                        {record.fee_water > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">淋水 ¥{record.fee_water}</Text>}
-                        {record.fee_tarpaulin > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">解篷布 ¥{record.fee_tarpaulin}</Text>}
-                        {record.fee_highway > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">高速 ¥{record.fee_highway}</Text>}
-                        {record.fee_stamp > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">盖章 ¥{record.fee_stamp}</Text>}
-                        {record.note_amount > 0 && <Text className="soft-chip px-2 py-1 text-xs text-foreground">其他 ¥{record.note_amount}</Text>}
+                        {record.fee_weighing > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">过磅 ¥{record.fee_weighing}</Text>}
+                        {record.fee_container > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">提柜 ¥{record.fee_container}</Text>}
+                        {record.fee_overnight > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">过夜 ¥{record.fee_overnight}</Text>}
+                        {record.fee_vn_overtime > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">越南超时 ¥{record.fee_vn_overtime}</Text>}
+                        {record.fee_vn_key > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">收钥匙 ¥{record.fee_vn_key}</Text>}
+                        {record.fee_parking > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">停车 ¥{record.fee_parking}</Text>}
+                        {record.fee_newpost > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">新岗 ¥{record.fee_newpost}</Text>}
+                        {record.fee_taxi > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">打车 ¥{record.fee_taxi}</Text>}
+                        {record.fee_water > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">淋水 ¥{record.fee_water}</Text>}
+                        {record.fee_tarpaulin > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">解篷布 ¥{record.fee_tarpaulin}</Text>}
+                        {record.fee_highway > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">高速 ¥{record.fee_highway}</Text>}
+                        {record.fee_stamp > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">盖章 ¥{record.fee_stamp}</Text>}
+                        {record.note_amount > 0 && <Text className="soft-chip px-3 py-1 text-base text-foreground">其他 ¥{record.note_amount}</Text>}
                       </View>
 
                       <View className="flex flex-row items-center justify-between">
-                        <Text className="text-sm text-muted-foreground">小计</Text>
-                        <Text className="text-lg font-semibold text-primary">¥{record.total_expense.toFixed(2)}</Text>
+                        <Text className="text-lg text-muted-foreground">小计</Text>
+                        <Text className="text-money text-primary">¥{record.total_expense.toFixed(2)}</Text>
                       </View>
 
                       {record.commission > 0 && (
                         <View className="mt-1 flex flex-row items-center justify-between">
-                          <Text className="text-sm text-muted-foreground">提成</Text>
-                          <Text className="text-base font-semibold text-green-600">¥{record.commission.toFixed(2)}</Text>
+                          <Text className="text-lg text-muted-foreground">提成</Text>
+                          <Text className="text-xl font-bold text-green-700">¥{record.commission.toFixed(2)}</Text>
                         </View>
                       )}
                     </View>
@@ -242,7 +242,7 @@ function Records() {
                     {record.status === 'pending' && (
                       <View className="mt-3 flex flex-row gap-2">
                         <View
-                          className="flex-1 rounded-xl bg-primary py-2 flex items-center justify-center"
+                          className="tap-target flex-1 rounded-xl bg-primary flex items-center justify-center"
                           role="button"
                           ariaRole="button"
                           ariaLabel={`编辑${record.plate_number}报账`}
@@ -250,10 +250,10 @@ function Records() {
                             e.stopPropagation()
                             editRecord(record)
                           }}>
-                          <Text className="text-base text-primary-foreground">编辑</Text>
+                          <Text className="text-xl font-medium text-primary-foreground">编辑</Text>
                         </View>
                         <View
-                          className="flex-1 rounded-xl bg-destructive py-2 flex items-center justify-center"
+                          className="tap-target flex-1 rounded-xl bg-destructive flex items-center justify-center"
                           role="button"
                           ariaRole="button"
                           ariaLabel={`删除${record.plate_number}报账`}
@@ -261,7 +261,7 @@ function Records() {
                             e.stopPropagation()
                             deleteRecord(record)
                           }}>
-                          <Text className="text-base text-white">删除</Text>
+                          <Text className="text-xl font-medium text-white">删除</Text>
                         </View>
                       </View>
                     )}

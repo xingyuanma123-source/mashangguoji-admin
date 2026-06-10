@@ -17,7 +17,8 @@
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* 大字·工地友好：次要文字加深一档，强光下不发虚 */
+    --muted-foreground: 215 25% 38%;
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
@@ -97,5 +98,47 @@
 
   .shadow-elegant {
     box-shadow: var(--shadow-elegant);
+  }
+
+  /* ===== 大字·工地友好 语义类 ===== */
+  /* 车牌：超大字号，一眼可读 */
+  .text-plate {
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 600;
+  }
+  /* 车牌输入框：weapp Input 自带固定行高，大字号会被竖向裁切，需显式撑高 */
+  .input-plate {
+    font-size: 30px;
+    font-weight: 600;
+    height: 42px;
+    line-height: 42px;
+  }
+  /* 金额：行内小计/车辆合计 */
+  .text-money {
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+  /* 金额：底部焦点大合计 */
+  .text-money-hero {
+    font-size: 40px;
+    line-height: 1.05;
+    font-weight: 800;
+  }
+  /* 高触达输入/可点块：最小 56px，戴手套也好点 */
+  .field-box {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+  }
+  /* 巨型主按钮：最小 64px */
+  .btn-jumbo {
+    min-height: 64px;
+  }
+  /* 真 44pt 触达热区（tailwind 的 h-11 经 rem 换算后只有 33pt，不达标） */
+  .tap-target {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

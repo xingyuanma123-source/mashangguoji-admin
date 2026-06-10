@@ -1,5 +1,5 @@
 // 报账提交页（首页）
-import {Button, Image, Picker, ScrollView, Switch, Text, View} from '@tarojs/components'
+import {Button, Image, Picker, ScrollView, Text, View} from '@tarojs/components'
 import Taro, {useDidShow} from '@tarojs/taro'
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {withRouteGuard} from '@/components/RouteGuard'
@@ -111,10 +111,6 @@ function Submit() {
 
   const handleDateChange = (e: {detail: {value: string}}) => {
     setSelectedDate(e.detail.value)
-  }
-
-  const handleOvertimeChange = (e: {detail: {value: boolean}}) => {
-    setIsOvertime(e.detail.value)
   }
 
   const addVehicle = useCallback(() => {
@@ -413,36 +409,45 @@ function Submit() {
   return (
     <View className="page-shell flex flex-col">
       <View className="surface-card mx-4 mt-4 p-4">
-        <View className="flex flex-col space-y-4">
+        <View className="flex flex-col gap-4">
           <View className="flex flex-row items-center justify-between">
-            <Text className="text-lg font-semibold text-foreground">司机姓名</Text>
-            <Text className="text-lg text-primary font-semibold">{driver?.name}</Text>
+            <Text className="text-lg text-muted-foreground">司机</Text>
+            <Text className="text-2xl font-bold text-foreground">{driver?.name}</Text>
           </View>
 
-          <View className="flex flex-col space-y-2">
-            <Text className="text-base text-foreground font-medium">报账日期 <Text className="text-destructive">*</Text></Text>
-            <View className="flex flex-row items-center space-x-3">
+          <View className="flex flex-col gap-2">
+            <Text className="text-lg text-foreground font-medium">报账日期 <Text className="text-destructive">*</Text></Text>
+            <View className="flex flex-row items-center gap-3">
               <Picker mode="date" value={selectedDate || todayStr} onChange={handleDateChange} className="flex-1">
-                <View className={`rounded-xl border px-4 py-4 ${selectedDate ? 'bg-input border-border' : 'bg-input border-destructive'}`}>
-                  <Text className={`text-base ${selectedDate ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    {selectedDate || '请选择日期'}
+                <View className={`field-box rounded-xl border-2 px-4 ${selectedDate ? 'bg-input border-border' : 'bg-destructive/10 border-destructive'}`}>
+                  <Text className={`text-2xl font-semibold ${selectedDate ? 'text-foreground' : 'text-destructive'}`}>
+                    {selectedDate || '请选报账日期'}
                   </Text>
                 </View>
               </Picker>
               <View
-                className="soft-chip px-4 py-4"
+                className="field-box soft-chip px-5"
                 role="button"
                 ariaRole="button"
                 ariaLabel="选择今天作为报账日期"
                 onClick={() => setSelectedDate(todayStr)}>
-                <Text className="text-base text-primary font-medium">今天</Text>
+                <Text className="text-2xl text-primary font-semibold">今天</Text>
               </View>
             </View>
           </View>
 
-          <View className="flex flex-row items-center justify-between">
-            <Text className="text-base text-foreground font-medium">是否加班</Text>
-            <Switch checked={isOvertime} ariaLabel="是否加班" onChange={handleOvertimeChange} color="#3b82f6" />
+          <View
+            className={`field-box rounded-xl border-2 px-4 justify-between ${isOvertime ? 'bg-orange-500/10 border-orange-400' : 'bg-input border-border'}`}
+            role="button"
+            ariaRole="button"
+            ariaLabel={`是否加班，当前${isOvertime ? '已开启' : '未开启'}，点击切换`}
+            onClick={() => setIsOvertime(!isOvertime)}>
+            <Text className={`text-2xl font-semibold ${isOvertime ? 'text-orange-600' : 'text-foreground'}`}>
+              {isOvertime ? '加班 ⚡' : '加班'}
+            </Text>
+            <View className={`h-8 w-14 rounded-full flex flex-row items-center px-1 ${isOvertime ? 'bg-orange-500 justify-end' : 'bg-muted-foreground/30 justify-start'}`}>
+              <View className="h-6 w-6 rounded-full bg-white" />
+            </View>
           </View>
         </View>
       </View>
@@ -459,26 +464,26 @@ function Submit() {
                 return (
                   <View
                     key={vehicle.id}
-                    className={`relative shrink-0 rounded-full ${isActive ? 'bg-primary' : 'bg-card border border-border'}`}>
+                    className={`shrink-0 flex flex-row items-stretch overflow-hidden rounded-xl border-2 ${isActive ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}>
                     <View
                       className="px-4 py-2"
                       role="button"
                       ariaRole="button"
                       ariaLabel={`切换到${vehicleLabel}，${isReady ? '已就绪' : '待处理'}，小计${vehicle.total.toFixed(2)}元`}
                       onClick={() => setActiveVehicleIndex(index)}>
-                      <View className="flex flex-row items-center gap-1.5">
-                        <View className={`h-2 w-2 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-orange-400'}`} />
-                        <Text className={`text-base font-semibold ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
+                      <View className="flex flex-row items-center gap-2">
+                        <View className={`h-3 w-3 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-orange-400'}`} />
+                        <Text className={`text-xl font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
                           {vehicleLabel}
                         </Text>
                       </View>
-                      <Text className={`mt-0.5 text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                      <Text className={`mt-0.5 text-base ${isActive ? 'text-primary/80' : 'text-muted-foreground'}`}>
                         ¥{vehicle.total.toFixed(2)}
                       </Text>
                     </View>
                     {vehicles.length > 1 && (
                       <View
-                        className="absolute -right-3 -top-3 h-11 w-11 flex items-center justify-center"
+                        className={`tap-target flex items-center justify-center border-l ${isActive ? 'border-primary/30' : 'border-border'}`}
                         role="button"
                         ariaRole="button"
                         ariaLabel={`删除${vehicleLabel}`}
@@ -486,9 +491,7 @@ function Submit() {
                           e.stopPropagation?.()
                           deleteVehicle(index)
                         }}>
-                        <View className={`h-5 w-5 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-foreground/25' : 'bg-muted'}`}>
-                          <Text className={`text-xs font-semibold ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>×</Text>
-                        </View>
+                        <Text className={`text-2xl ${isActive ? 'text-primary/70' : 'text-muted-foreground'}`}>×</Text>
                       </View>
                     )}
                   </View>
@@ -496,12 +499,12 @@ function Submit() {
               })}
 
               <View
-                className="shrink-0 rounded-full border border-dashed border-primary/50 bg-primary/5 px-4 py-3"
+                className="tap-target shrink-0 self-stretch rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 px-3 flex items-center justify-center"
                 role="button"
                 ariaRole="button"
                 ariaLabel="添加车辆"
                 onClick={addVehicle}>
-                <Text className="text-lg font-semibold text-primary">+</Text>
+                <Text className="text-3xl font-semibold text-primary">＋</Text>
               </View>
             </View>
           </ScrollView>
@@ -522,10 +525,10 @@ function Submit() {
       </ScrollView>
 
       <View className="border-t border-border bg-background/95 px-4 pb-6 pt-4">
-        <View className="surface-card bg-primary/10 p-4 mb-2">
+        <View className="surface-card bg-primary/10 p-4 mb-3">
             <View className="flex flex-row items-center justify-between">
-              <Text className="text-base text-foreground font-medium">{formatDateLabel(selectedDate)}费用合计</Text>
-              <Text className="text-2xl font-bold text-primary">¥{getTotalExpense().toFixed(2)}</Text>
+              <Text className="text-lg text-foreground font-medium">{formatDateLabel(selectedDate)}合计</Text>
+              <Text className="text-money-hero text-primary">¥{getTotalExpense().toFixed(2)}</Text>
             </View>
           </View>
 
@@ -533,8 +536,8 @@ function Submit() {
           className="w-full bg-primary text-primary-foreground rounded-xl"
           onClick={handleSubmit}
           disabled={loading}>
-          <View className="py-3">
-            <Text className="text-base font-semibold">{loading ? '处理中...' : '提交报账'}</Text>
+          <View className="btn-jumbo flex items-center justify-center">
+            <Text className="text-2xl font-bold">{loading ? '处理中...' : '提交报账'}</Text>
           </View>
         </Button>
       </View>
@@ -555,7 +558,7 @@ function Submit() {
               <View className="flex flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-foreground">请确认报账信息</Text>
                 <View
-                  className="h-11 w-11 flex items-center justify-center"
+                  className="tap-target flex items-center justify-center"
                   role="button"
                   ariaRole="button"
                   ariaLabel="关闭报账确认"
@@ -580,7 +583,7 @@ function Submit() {
                     {/* 车辆标题行 */}
                     <View className="flex flex-row items-center justify-between mb-2">
                       <Text className="text-xl font-semibold text-foreground">🚗 {v.plate_number}</Text>
-                      <Text className="text-xl font-bold text-primary">¥{v.total.toFixed(2)}</Text>
+                      <Text className="text-money text-primary">¥{v.total.toFixed(2)}</Text>
                     </View>
 
                     {/* 路线 */}
@@ -633,7 +636,7 @@ function Submit() {
                 <View className="bg-primary/10 rounded-2xl p-4">
                   <View className="flex flex-row items-center justify-between">
                     <Text className="text-xl font-semibold text-foreground">总计</Text>
-                    <Text className="text-2xl font-bold text-primary">¥{getTotalExpense().toFixed(2)}</Text>
+                    <Text className="text-money text-primary">¥{getTotalExpense().toFixed(2)}</Text>
                   </View>
                 </View>
               </View>
@@ -642,20 +645,20 @@ function Submit() {
             {/* 固定底部按钮 */}
             <View className="px-6 py-4 flex flex-row space-x-4 border-t border-border flex-shrink-0">
               <View
-                className="flex-1 bg-muted rounded-2xl py-4 flex items-center justify-center"
+                className="flex-1 bg-muted rounded-2xl btn-jumbo flex items-center justify-center"
                 role="button"
                 ariaRole="button"
                 ariaLabel="返回修改报账信息"
                 onClick={() => setShowConfirm(false)}>
-                <Text className="text-xl font-semibold text-foreground">返回修改</Text>
+                <Text className="text-2xl font-semibold text-foreground">返回修改</Text>
               </View>
               <View
-                className="flex-1 bg-primary rounded-2xl py-4 flex items-center justify-center"
+                className="flex-1 bg-primary rounded-2xl btn-jumbo flex items-center justify-center"
                 role="button"
                 ariaRole="button"
                 ariaLabel="确认提交报账"
                 onClick={handleConfirmSubmit}>
-                <Text className="text-xl font-semibold text-primary-foreground">确认提交</Text>
+                <Text className="text-2xl font-semibold text-primary-foreground">确认提交</Text>
               </View>
             </View>
           </View>
