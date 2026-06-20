@@ -6,6 +6,8 @@
 // - 用 service_role 直连 PostgREST；DB 锁死 anon 后，这是唯一入口。
 // - verify_jwt=false：本函数自带鉴权（登录校验凭证、数据接口校验自签令牌）。
 
+import bcrypt from 'npm:bcryptjs@2.4.3'
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const SECRET = Deno.env.get('DRIVER_SESSION_SECRET') || SERVICE_KEY
@@ -83,12 +85,31 @@ async function verifyToken(token: string | null): Promise<Record<string, any> | 
 async function sha256(s: string): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))
 }
-async function passwordsMatch(actual: string, expected: string): Promise<boolean> {
-  const a = await sha256(String(actual ?? ''))
-  const b = await sha256(String(expected ?? ''))
+const BCRYPT_ROUNDS = 10
+function isBcryptHash(value: unknown): boolean {
+  return /^\$2[aby]\$\d{2}\$/.test(String(value ?? ''))
+}
+// 兼容存量明文密码；登录成功后由 upgradeStoredPassword 升级为 bcrypt
+async function passwordsMatch(stored: string, supplied: string): Promise<boolean> {
+  if (isBcryptHash(stored)) return bcrypt.compareSync(String(supplied ?? ''), String(stored))
+  const a = await sha256(String(stored ?? ''))
+  const b = await sha256(String(supplied ?? ''))
   let diff = 0
   for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]
   return diff === 0
+}
+// 明文密码登录成功后写回 bcrypt 散列；失败只记日志，不影响登录
+async function upgradeStoredPassword(driverId: number, password: string): Promise<void> {
+  try {
+    const resp = await pg(`/drivers?id=eq.${driverId}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ password: bcrypt.hashSync(password, BCRYPT_ROUNDS) }),
+    })
+    if (!resp.ok) throw new Error(await resp.text())
+  } catch (e) {
+    console.error('密码升级失败:', (e as Error)?.message)
+  }
 }
 
 // ---------- PostgREST ----------
@@ -150,6 +171,9 @@ async function handleLogin(req: Request): Promise<Response> {
   const driver = rows?.[0]
   if (!driver || !(await passwordsMatch(driver.password, password))) {
     return json({ error: '账号或密码错误' }, 401)
+  }
+  if (!isBcryptHash(driver.password)) {
+    await upgradeStoredPassword(driver.id, password)
   }
   const token = await signToken({ driver_id: driver.id, username: driver.username })
   return json({
