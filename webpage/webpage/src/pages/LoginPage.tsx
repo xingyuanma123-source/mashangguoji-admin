@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { loginServiceStaff } from '@/db/api';
+import { loginAdminSession } from '@/lib/adminSession';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGE_STORAGE_KEY } from '@/i18n';
@@ -27,7 +27,7 @@ const LoginPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      const user = await loginServiceStaff(username, password);
+      const user = await loginAdminSession(username, password);
       if (user) {
         login(user);
         toast.success(t('toast.loginSuccess'));

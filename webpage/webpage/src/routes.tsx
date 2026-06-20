@@ -3,6 +3,7 @@ import React, { lazy } from 'react';
 export interface RouteConfig {
   path: string;
   component: React.LazyExoticComponent<React.ComponentType>;
+  adminOnly?: boolean;
 }
 
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
@@ -19,6 +20,10 @@ const FeeTypesPage = lazy(() => import('@/pages/FeeTypesPage'));
 const StaffPage = lazy(() => import('@/pages/StaffPage'));
 const LogsPage = lazy(() => import('@/pages/LogsPage'));
 const LegalPage = lazy(() => import('@/pages/Legal'));
+const AgentConsolePage = lazy(() => import('@/pages/AgentConsolePage'));
+const ContractsPage = lazy(() => import('@/pages/ContractsPage'));
+const LegalLibraryPage = lazy(() => import('@/pages/LegalLibraryPage'));
+const PlaybookPage = lazy(() => import('@/pages/PlaybookPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const routes: RouteConfig[] = [
@@ -73,6 +78,7 @@ const routes: RouteConfig[] = [
   {
     path: '/staff',
     component: StaffPage,
+    adminOnly: true,
   },
   {
     path: '/logs',
@@ -81,6 +87,23 @@ const routes: RouteConfig[] = [
   {
     path: '/legal',
     component: LegalPage,
+  },
+  {
+    path: '/legal/agent',
+    component: AgentConsolePage,
+  },
+  {
+    path: '/legal/contracts',
+    component: ContractsPage,
+  },
+  {
+    path: '/legal/library',
+    component: LegalLibraryPage,
+  },
+  {
+    path: '/legal/playbook',
+    component: PlaybookPage,
+    adminOnly: true,
   },
   {
     path: '/404',

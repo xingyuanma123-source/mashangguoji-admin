@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
+import PageErrorState from '@/components/common/PageErrorState';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -262,6 +263,7 @@ const VehicleDetailPage: React.FC = () => {
 
   const truck = truckQuery.data;
   const companies = companiesQuery.data ?? [];
+  const loadError = truckQuery.error ?? companiesQuery.error;
   const canVerify = truck && (truck.data_source === 'legacy' || truck.data_source === 'manual') && isTruckReadyToVerify(truck);
 
   return (
@@ -290,9 +292,18 @@ const VehicleDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {loadError && (
+          <PageErrorState
+            error={loadError}
+            onRetry={() => {
+              void Promise.all([truckQuery.refetch(), companiesQuery.refetch()]);
+            }}
+          />
+        )}
+
         {truckQuery.isLoading ? (
           <Skeleton className="h-[520px] rounded-lg" />
-        ) : !truck ? (
+        ) : truckQuery.isError ? null : !truck ? (
           <Card>
             <CardContent className="p-10 text-center text-muted-foreground">没有找到这辆车</CardContent>
           </Card>

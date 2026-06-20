@@ -18,8 +18,8 @@ const queryClient = new QueryClient({
 });
 
 // 路由守卫组件
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isReady } = useAuth();
+const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
+  const { user, isAdmin, isReady } = useAuth();
   const location = useLocation();
 
   if (!isReady) {
@@ -31,6 +31,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   if (user && location.pathname === '/login') {
+    return <Navigate to="/" replace />;
+  }
+
+  if (user && adminOnly && !isAdmin) {
     return <Navigate to="/" replace />;
   }
 
@@ -49,7 +53,7 @@ const AppRoutes: React.FC = () => {
             key={index}
             path={route.path}
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly={route.adminOnly}>
                 <Suspense fallback={<div className="p-6 text-muted-foreground">{t('common.loading')}</div>}>
                   <Component />
                 </Suspense>

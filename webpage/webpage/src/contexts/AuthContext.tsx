@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ServiceStaff } from '@/types/database';
+import type { ServiceStaffSession } from '@/types/database';
+import { getAdminSession, logoutAdminSession } from '@/lib/adminSession';
+import { PROXY_SESSION_EXPIRED_EVENT } from '@/lib/proxySession';
 
 interface AuthContextType {
-  user: ServiceStaff | null;
-  login: (user: ServiceStaff) => void;
-  logout: () => void;
+  user: ServiceStaffSession | null;
+  login: (user: ServiceStaffSession) => void;
+  logout: () => Promise<void>;
   isAdmin: boolean;
   isReady: boolean;
 }
@@ -12,30 +14,44 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<ServiceStaff | null>(null);
+  const [user, setUser] = useState<ServiceStaffSession | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // 从 localStorage 恢复登录状态
-    const savedUser = localStorage.getItem('service_staff');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('service_staff');
-      }
-    }
-    setIsReady(true);
+    let cancelled = false;
+
+    void getAdminSession()
+      .then((sessionUser) => {
+        if (!cancelled) setUser(sessionUser);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsReady(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const login = (userData: ServiceStaff) => {
+  useEffect(() => {
+    const handleExpiredSession = () => setUser(null);
+    window.addEventListener(PROXY_SESSION_EXPIRED_EVENT, handleExpiredSession);
+    return () => window.removeEventListener(PROXY_SESSION_EXPIRED_EVENT, handleExpiredSession);
+  }, []);
+
+  const login = (userData: ServiceStaffSession) => {
     setUser(userData);
-    localStorage.setItem('service_staff', JSON.stringify(userData));
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('service_staff');
+  const logout = async () => {
+    try {
+      await logoutAdminSession();
+    } finally {
+      setUser(null);
+    }
   };
 
   const isAdmin = user?.role === 'admin';

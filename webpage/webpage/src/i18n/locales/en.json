@@ -73,7 +73,9 @@
     "inputUsername": "Enter username",
     "inputPassword": "Enter password",
     "defaultPassword": "Default password: 123456",
-    "leavePasswordBlank": "Leave blank to keep password"
+    "leavePasswordBlank": "Leave blank to keep password",
+    "none": "None",
+    "unknownError": "Unknown error"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -86,15 +88,47 @@
     "feeTypes": "Fee Types",
     "staff": "Staff Accounts",
     "logs": "Operation Logs",
-    "legal": "Legal",
+    "legal": "AI Legal Consultation",
+    "legalContracts": "Contract Register",
+    "legalLibrary": "Legal Library",
     "systemSettings": "System Settings",
+    "groups": {
+      "workspace": "Workspace",
+      "operations": "Operations",
+      "legal": "Legal",
+      "fleet": "Fleet",
+      "system": "System"
+    },
     "logout": "Logout",
     "logoutTitle": "Logout",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "menu": "Navigation Menu",
+    "openMenu": "Open navigation menu",
+    "legalAgent": "Legal Agent",
+    "legalPlaybook": "Legal Playbook"
   },
   "login": {
     "title": "Account Login"
+  },
+  "errors": {
+    "retry": "Reload",
+    "auth": {
+      "title": "Session expired",
+      "description": "This session can no longer access data. Sign in again and retry."
+    },
+    "permission": {
+      "title": "Access denied",
+      "description": "The current account does not have permission to read this data."
+    },
+    "service": {
+      "title": "Data service unavailable",
+      "description": "The database proxy or upstream service is unavailable. Try reloading shortly."
+    },
+    "generic": {
+      "title": "Failed to load data",
+      "description": "An unexpected error occurred while loading data. Try reloading."
+    }
   },
   "toast": {
     "loadDataFailed": "Failed to load data",
@@ -151,12 +185,21 @@
   },
   "expenses": {
     "title": "Expense Management",
+    "description": "Review driver expenses, fill commissions, and process pending records",
     "route": "Route / Location",
     "expense": "Expense",
     "commission": "Commission",
     "noRecords": "No expense records",
     "batchCommission": "Batch Commission",
     "batchConfirm": "Batch Confirm",
+    "batchToolbarTitle": "Batch Process Pending Expenses",
+    "batchEmptyHint": "{{count}} pending records are visible. Select the records you want to process.",
+    "batchSelectionHint": "Batch actions only apply to the selected pending records.",
+    "selectPendingFirst": "Select pending records first",
+    "clearSelection": "Clear Selection",
+    "selectAllPending": "Select all pending records in the current list",
+    "selectRecord": "Select the expense record for {{driver}} driving {{vehicle}} on {{date}}",
+    "review": "Review",
     "confirmTitle": "Confirm Operation",
     "confirmDescription": "Confirm the selected {{count}} expense records? They cannot be edited after confirmation.",
     "batchCommissionTitle": "Batch Fill Commission",
@@ -182,6 +225,7 @@
   },
   "summary": {
     "title": "Summary",
+    "description": "Summarize expense data by date or driver and export results",
     "groupByDate": "Group by Date",
     "groupByDriver": "Group by Driver",
     "summaryInfo": "Summary Info",
@@ -199,6 +243,7 @@
   },
   "drivers": {
     "title": "Driver Management",
+    "description": "Manage driver accounts, employment status, and login passwords",
     "add": "Add Driver",
     "edit": "Edit Driver",
     "resetPassword": "Reset Password",
@@ -208,6 +253,7 @@
   },
   "vehicles": {
     "title": "Vehicle Management",
+    "description": "Manage trucks, trailers, documents, and trailer assignments",
     "add": "Add Vehicle",
     "edit": "Edit Vehicle",
     "plateNumber": "Plate Number",
@@ -223,6 +269,7 @@
   },
   "advanceFunds": {
     "title": "Advance Fund Management",
+    "description": "Review driver balances, recharge records, and confirmed expenses",
     "overview": "Driver Advance Fund Overview",
     "recharge": "Recharge",
     "rechargeTotal": "Recharge Total",
@@ -245,6 +292,7 @@
   },
   "feeTypes": {
     "title": "Fee Type Management",
+    "description": "Manage the expense fields and display order available to drivers",
     "add": "Add Fee Type",
     "edit": "Edit Fee Type",
     "fieldNameEn": "Field Name (English)",
@@ -262,6 +310,7 @@
   },
   "staff": {
     "title": "Staff Account Management",
+    "description": "Manage admin-system staff accounts and administrator access",
     "add": "Add Staff",
     "edit": "Edit Staff",
     "cannotDeleteSelf": "You cannot delete yourself",
@@ -269,6 +318,7 @@
   },
   "logs": {
     "title": "Operation Logs",
+    "description": "Review key admin actions and trace the source of data changes",
     "operator": "Operator",
     "actionType": "Action Type",
     "time": "Time",
@@ -280,7 +330,9 @@
       "edit": "Edit",
       "create": "Create",
       "update": "Update",
-      "delete": "Delete"
+      "delete": "Delete",
+      "renew": "Renew",
+      "terminate": "Terminate"
     },
     "targets": {
       "expense_record": "Expense Record",
@@ -288,7 +340,9 @@
       "vehicle": "Vehicle",
       "advance_fund": "Advance Fund",
       "fee_type": "Fee Type",
-      "staff": "Staff Account"
+      "staff": "Staff Account",
+      "contract": "Contract",
+      "legal_document": "Legal Document"
     }
   },
   "tracking": {
@@ -300,6 +354,8 @@
     "invalidTime": "Invalid time",
     "none": "None",
     "searchPlate": "Search plate number",
+    "listView": "Vehicle List",
+    "mapView": "Map",
     "loading": "Loading tracking data...",
     "noMatches": "No matching vehicles",
     "noLocation": "No location",
@@ -316,8 +372,10 @@
     "noAvailableLocation": "This vehicle has no available location"
   },
   "legal": {
-    "title": "Legal",
-    "subtitle": "For Mashang International's cross-border logistics scenarios, focusing on contract review, business risk judgment, and template reuse.",
+    "title": "AI Legal Consultation",
+    "subtitle": "Uses legal library documents and business facts to assist with contracts, cargo damage, subcontract liability, and cross-border disputes.",
+    "aiContext": "Contextual Consultation",
+    "libraryGrounded": "Legal Library Grounding",
     "riskPerspective": "Cross-border Logistics Risk View",
     "templatesBuiltIn": "Built-in Contract Templates",
     "contractReview": "Contract Review",
@@ -350,7 +408,7 @@
     "reviewFailed": "Contract review failed. Please try again later.",
     "requestFailed": "Request Failed",
     "consultDescription": "Keeps full context history and prioritizes logistics contracts, cargo damage compensation, subcontract liability, and cross-border transport disputes.",
-    "consultPlaceholderNoKey": "Configure VITE_NVIDIA_API_KEY before starting consultation",
+    "consultPlaceholderNoKey": "The model service is temporarily unavailable",
     "consultPlaceholder": "Enter a question about contracts, cargo damage compensation, subcontract liability, or cross-border disputes",
     "noConsult": "No consultation yet. Ask about carrier liability caps, subcontract recourse clauses, cargo damage evidence, or dispute resolution risks.",
     "send": "Send",
@@ -388,10 +446,175 @@
     "templateCopied": "Template copied",
     "copyFailed": "Copy failed. Please select the text manually.",
     "doubleClickToSelectAll": "Double-click to select all content",
-    "noTemplates": "No templates available"
+    "noTemplates": "No templates available",
+    "libraryContext": "Library Sources (up to 3)",
+    "noLibraryDocuments": "No documents available",
+    "contracts": {
+      "title": "Contract Ledger",
+      "description": "Contract lifecycle, expiry alerts, and AI risk scanning",
+      "add": "Add Contract",
+      "edit": "Edit",
+      "renew": "Renew",
+      "terminate": "Terminate Contract",
+      "searchPlaceholder": "Search title, counterparty, or number",
+      "allStatus": "All Status",
+      "alertTitle": "Contract Expiry Alerts",
+      "markHandled": "Mark Handled",
+      "renewalDeadline": "Renewal/cancellation deadline: ",
+      "expiryDeadline": "Contract expiry: ",
+      "daysLeft": "{{count}} days",
+      "period": "Period",
+      "loading": "Loading contracts...",
+      "empty": "No contracts. Add one from the top right.",
+      "loadFailed": "Failed to load contracts",
+      "detailLoadFailed": "Failed to load contract details",
+      "riskScan": "Risk Scan",
+      "templateDiff": "Compare Template",
+      "attachments": "Attachments",
+      "noAttachments": "No attachments",
+      "reports": "AI Review Reports",
+      "noReports": "No reports",
+      "scanFile": "Contract and related legal documents (common documents, spreadsheets, images, and archives)",
+      "ocrLoading": "Reading the document and extracting fields...",
+      "ocrComplete": "Document reading complete. Verify before saving.",
+      "ocrFailed": "Automatic reading failed: {{error}}. The file can still be saved as an attachment; enter the details manually.",
+      "fileTooLarge": "File is too large",
+      "invalidFile": "Unsupported format. Upload a common legal document, image, or archive.",
+      "attachmentOnly": "This format will be saved as an attachment but cannot be read automatically. Enter the contract details manually.",
+      "requiredFields": "Enter the contract title and counterparty",
+      "renewDatesRequired": "A renewed contract requires new start and end dates",
+      "created": "Contract saved",
+      "updated": "Contract updated",
+      "renewedSuccess": "Contract renewed",
+      "saveFailed": "Failed to save",
+      "noFieldChanges": "No fields changed",
+      "noOcrText": "This contract has no OCR text to review",
+      "templateNoText": "The selected template has no usable text",
+      "riskScanComplete": "Risk scan complete",
+      "templateDiffComplete": "Template comparison complete",
+      "reviewFailed": "Review failed",
+      "templateLoadFailed": "Failed to load templates",
+      "terminateConfirm": "Terminate this contract?",
+      "terminatedSuccess": "Contract terminated",
+      "terminateFailed": "Failed to terminate contract",
+      "selectTemplate": "Select Comparison Template",
+      "template": "Contract Template",
+      "noTemplates": "No templates in the legal library",
+      "startTemplateDiff": "Start Comparison",
+      "renewedFrom": "Renewed from: {{title}}",
+      "renewedTo": "Renewed as: {{title}}",
+      "dialogTitles": {
+        "create": "Add Contract",
+        "edit": "Edit Contract",
+        "renew": "Renew Contract"
+      },
+      "dialogDescriptions": {
+        "create": "Enter contract details and upload a legal document for extraction or attachment storage.",
+        "edit": "Update the editable contract fields and save the changes.",
+        "renew": "Reuse the original contract details and enter the new contract period."
+      },
+      "templateDialogDescription": "Select a contract template from the legal library to compare clause deviations.",
+      "submit": {
+        "create": "Verify and Save",
+        "edit": "Save Changes",
+        "renew": "Confirm Renewal"
+      },
+      "statuses": {
+        "active": "Active",
+        "expired": "Expired",
+        "renewed": "Renewed",
+        "terminated": "Terminated"
+      },
+      "categories": {
+        "transport": "Transport",
+        "lease": "Lease",
+        "labor": "Employment",
+        "purchase": "Purchase",
+        "service": "Service",
+        "other": "Other"
+      },
+      "fields": {
+        "title": "Contract Title",
+        "contract_no": "Contract Number",
+        "counterparty": "Counterparty",
+        "category": "Category",
+        "amount": "Amount",
+        "currency": "Currency",
+        "sign_date": "Signing Date",
+        "start_date": "Start Date",
+        "end_date": "End Date",
+        "auto_renew": "Auto Renew",
+        "renew_notice_days": "Cancellation Notice (days)",
+        "owner_staff_id": "Owner",
+        "remark": "Remarks",
+        "status": "Status"
+      },
+      "reviewTypes": {
+        "risk_scan": "Risk Scan",
+        "template_diff": "Template Comparison"
+      },
+      "riskLevels": {
+        "high": "High Risk",
+        "medium": "Medium Risk",
+        "low": "Low Risk"
+      }
+    },
+    "library": {
+      "title": "Legal Library",
+      "description": "Versioned archive for templates, policies, regulations, and litigation documents",
+      "upload": "Upload File",
+      "uploadTitle": "Upload Legal Document",
+      "uploadDescription": "Enter document details and upload the first version.",
+      "newVersion": "Publish New Version",
+      "searchPlaceholder": "Search title or content",
+      "allTypes": "All Types",
+      "delete": "Delete Document",
+      "askAi": "Ask AI",
+      "loading": "Loading legal documents...",
+      "empty": "No documents. Upload one from the top right.",
+      "loadFailed": "Failed to load legal documents",
+      "versionLoadFailed": "Failed to load version history",
+      "requiredFields": "Enter a title and select a file",
+      "uploaded": "Document added to the library",
+      "uploadFailed": "Upload failed",
+      "versionPublished": "New version published",
+      "versionFailed": "Failed to publish version",
+      "deleteConfirm": "Delete this document?",
+      "deleted": "Document deleted",
+      "deleteFailed": "Failed to delete document",
+      "noVersions": "No version history",
+      "fields": {
+        "title": "Title",
+        "type": "Type",
+        "tags": "Tags",
+        "tagsHint": "Tags (comma separated)",
+        "file": "File",
+        "version": "Current Version",
+        "updatedAt": "Updated"
+      },
+      "types": {
+        "template": "Contract Template",
+        "policy": "Policy",
+        "regulation": "Regulation",
+        "litigation": "Litigation",
+        "authorization": "Authorization",
+        "other": "Other"
+      },
+      "textStatuses": {
+        "done": "Text extracted",
+        "pending": "Extraction pending",
+        "failed": "Extraction failed"
+      }
+    }
   },
   "editExpense": {
     "title": "View Expense Record",
+    "reviewTitle": "Review Expense Record",
+    "editTitle": "Edit Expense Record",
+    "reviewHintTitle": "Complete the review before confirming",
+    "reviewHintDescription": "Check the route, fee details, total expense, commission, and bill images. Staff cannot edit the record after approval.",
+    "confirmApproval": "Confirm Approval",
+    "confirmingApproval": "Confirming...",
     "feeDetails": "Fee Details",
     "feeName": "Fee Name",
     "feeAmount": "Fee Amount",

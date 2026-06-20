@@ -70,6 +70,45 @@ async function parseDocx(arrayBuffer: ArrayBuffer) {
   return result.value;
 }
 
+function decodeXmlText(xml: string) {
+  return xml
+    .replace(/<(text:tab|w:tab)[^>]*\/>/g, '\t')
+    .replace(/<\/(text:p|w:p|a:p)>/g, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+async function parseZippedXml(arrayBuffer: ArrayBuffer, paths: string[]) {
+  const { default: JSZip } = await import('jszip');
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  const parts = await Promise.all(paths
+    .map((path) => zip.file(path))
+    .filter(Boolean)
+    .map(async (entry) => decodeXmlText(await entry!.async('text'))));
+  return parts.join('\n');
+}
+
+async function parseSpreadsheet(arrayBuffer: ArrayBuffer) {
+  const XLSX = await import('xlsx');
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  return workbook.SheetNames.map((name) => {
+    const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[name]);
+    return `[${name}]\n${csv}`;
+  }).join('\n\n');
+}
+
+function parseRtf(text: string) {
+  return text
+    .replace(/\\par[d]?/g, '\n')
+    .replace(/\\'[0-9a-f]{2}/gi, ' ')
+    .replace(/\\[a-z]+-?\d* ?/gi, '')
+    .replace(/[{}]/g, '');
+}
+
 function getFileExtension(file: File) {
   const parts = file.name.toLowerCase().split('.');
   return parts.length > 1 ? parts.pop() || '' : '';
@@ -91,10 +130,29 @@ export async function parseLegalFile(file: File): Promise<ParsedLegalFile> {
   ) {
     fileTypeLabel = 'Word DOCX';
     rawText = await parseDocx(arrayBuffer);
-  } else if (extension === 'doc' || file.type === 'application/msword') {
-    throw new Error('暂不支持旧版 .doc 文件，请先转换为 .docx 或 PDF 后再上传。');
+  } else if (['txt', 'md', 'json', 'csv', 'xml', 'eml'].includes(extension)) {
+    fileTypeLabel = extension.toUpperCase();
+    rawText = new TextDecoder().decode(arrayBuffer);
+  } else if (extension === 'html' || extension === 'htm') {
+    fileTypeLabel = 'HTML';
+    rawText = decodeXmlText(new TextDecoder().decode(arrayBuffer));
+  } else if (extension === 'rtf') {
+    fileTypeLabel = 'RTF';
+    rawText = parseRtf(new TextDecoder().decode(arrayBuffer));
+  } else if (extension === 'odt') {
+    fileTypeLabel = 'OpenDocument Text';
+    rawText = await parseZippedXml(arrayBuffer, ['content.xml']);
+  } else if (extension === 'pptx') {
+    fileTypeLabel = 'PowerPoint';
+    const { default: JSZip } = await import('jszip');
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const slides = Object.keys(zip.files).filter((path) => /^ppt\/slides\/slide\d+\.xml$/.test(path)).sort();
+    rawText = await parseZippedXml(arrayBuffer, slides);
+  } else if (extension === 'xls' || extension === 'xlsx') {
+    fileTypeLabel = 'Spreadsheet';
+    rawText = await parseSpreadsheet(arrayBuffer);
   } else {
-    throw new Error('仅支持 PDF 或 DOCX 合同文件。');
+    throw new Error('该格式可作为附件保存，但暂时无法自动读取正文。');
   }
 
   const normalizedText = normalizeText(rawText);

@@ -5,6 +5,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
+import PageErrorState from '@/components/common/PageErrorState';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -183,6 +184,7 @@ const TrailerDetailPage: React.FC = () => {
 
   const trailer = trailerQuery.data;
   const companies = companiesQuery.data ?? [];
+  const loadError = trailerQuery.error ?? companiesQuery.error;
 
   return (
     <MainLayout>
@@ -205,9 +207,18 @@ const TrailerDetailPage: React.FC = () => {
           <div className="text-sm text-muted-foreground">ID {trailer?.id ?? '-'} · 创建 {trailer?.created_at?.slice(0, 10) ?? '-'}</div>
         </div>
 
+        {loadError && (
+          <PageErrorState
+            error={loadError}
+            onRetry={() => {
+              void Promise.all([trailerQuery.refetch(), companiesQuery.refetch()]);
+            }}
+          />
+        )}
+
         {trailerQuery.isLoading ? (
           <Skeleton className="h-[520px] rounded-lg" />
-        ) : !trailer ? (
+        ) : trailerQuery.isError ? null : !trailer ? (
           <Card>
             <CardContent className="p-10 text-center text-muted-foreground">没有找到这个车挂</CardContent>
           </Card>

@@ -218,20 +218,20 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
     <View className="surface-card p-4 mb-4">
       <View className="flex flex-row items-center justify-between">
         <View className="flex-1">
-          <Text className="text-xl font-semibold text-foreground">{card.plate_number || '车辆信息'}</Text>
+          <Text className="text-plate text-foreground">{card.plate_number || '车辆信息'}</Text>
           <View className="mt-1 inline-flex soft-chip px-3 py-1">
-            <Text className="text-base text-primary">小计 ¥{card.total.toFixed(2)}</Text>
+            <Text className="text-lg text-primary font-semibold">小计 ¥{card.total.toFixed(2)}</Text>
           </View>
         </View>
       </View>
 
       <View className="mt-4 flex flex-col gap-4">
           <View>
-            <Text className="text-base text-muted-foreground mb-2 block">车牌号</Text>
-            <View className={`rounded-xl border-2 ${borderColor} bg-background px-3 py-3`}>
+            <Text className="text-lg text-muted-foreground mb-2 block">车牌号</Text>
+            <View className={`field-box rounded-xl border-2 ${borderColor} bg-background px-3`}>
               <Input
-                className="w-full text-xl text-foreground"
-                placeholder="输入车牌号搜索"
+                className="w-full input-plate text-foreground"
+                placeholder="输入车牌号"
                 ariaLabel="车牌号"
                 value={plateSearch}
                 onInput={(e) => handlePlateSearch(e.detail.value)}
@@ -241,7 +241,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
               />
             </View>
             {plateValid === 'invalid' && (
-              <Text className="mt-2 text-base text-orange-500">该车牌不在公司车辆库中</Text>
+              <Text className="mt-2 text-lg text-orange-500">该车牌不在公司车辆库中</Text>
             )}
             {showSearch && searchResults.length > 0 && (
               <>
@@ -274,10 +274,10 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
           </View>
 
           <View>
-            <Text className="text-base text-muted-foreground mb-2 block">路线/地点（选填）</Text>
-            <View className="rounded-xl border border-border bg-background px-3 py-3">
+            <Text className="text-lg text-muted-foreground mb-2 block">路线/地点（选填）</Text>
+            <View className="field-box rounded-xl border border-border bg-background px-3">
               <Input
-                className="w-full text-lg text-foreground"
+                className="w-full text-xl text-foreground"
                 placeholder="如：越南-桂福"
                 ariaLabel="路线或地点"
                 value={card.route}
@@ -288,9 +288,9 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
 
           <View>
             <View className="flex flex-row items-center justify-between mb-2">
-              <Text className="text-base text-muted-foreground">普通费用</Text>
+              <Text className="text-lg text-muted-foreground">普通费用</Text>
               <View className="soft-chip px-3 py-1">
-                <Text className="text-sm text-muted-foreground">{normalFeeItems.length} 项</Text>
+                <Text className="text-base text-muted-foreground">{normalFeeItems.length} 项</Text>
               </View>
             </View>
             <View className="flex flex-col gap-2">
@@ -305,28 +305,28 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
               ))}
             </View>
             <View
-              className="mt-2 rounded-xl border border-dashed border-primary/60 bg-primary/5 py-3 flex items-center justify-center"
+              className="mt-2 rounded-xl border border-dashed border-primary/60 bg-primary/5 py-4 flex items-center justify-center"
               role="button"
               ariaRole="button"
               ariaLabel="添加普通费用"
               onClick={addFeeItem}>
-              <Text className="text-base font-medium text-primary">+ 添加费用</Text>
+              <Text className="text-2xl font-medium text-primary">+ 添加费用</Text>
             </View>
           </View>
 
           <View className="border-t border-border/60 pt-4">
             <View className="flex flex-row items-center justify-between mb-2">
-              <Text className="text-base text-muted-foreground">其他费用</Text>
+              <Text className="text-lg text-muted-foreground">其他费用</Text>
               <View className="soft-chip px-3 py-1">
-                <Text className="text-sm text-muted-foreground">{otherFeeItems.length} 项</Text>
+                <Text className="text-base text-muted-foreground">{otherFeeItems.length} 项</Text>
               </View>
             </View>
             <View className="flex flex-col gap-2">
               {otherFeeItems.map((item) => (
                 <View key={item.id} className="flex flex-row items-center gap-2">
-                  <View className="min-w-0 basis-3/5 rounded-xl border border-border bg-background px-3 py-3">
+                  <View className="field-box min-w-0 basis-3/5 rounded-xl border border-border bg-background px-3">
                     <Input
-                      className="w-full text-lg text-foreground"
+                      className="w-full text-xl text-foreground"
                       placeholder="请输入费用名称"
                       ariaLabel="其他费用名称"
                       value={item.note || ''}
@@ -338,9 +338,9 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
                       }
                     />
                   </View>
-                  <View className="basis-2/5 rounded-xl border border-border bg-background px-3 py-3">
+                  <View className="field-box basis-2/5 rounded-xl border border-border bg-background px-3">
                     <Input
-                      className="w-full text-lg text-right text-foreground"
+                      className="w-full h-9 text-2xl text-right text-foreground"
                       type="digit"
                       placeholder="金额"
                       ariaLabel={`${item.note || '其他费用'}金额`}
@@ -354,7 +354,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
                     />
                   </View>
                   <View
-                    className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+                    className="tap-target shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
                     role="button"
                     ariaRole="button"
                     ariaLabel={`删除${item.note || '其他费用'}行`}
@@ -365,20 +365,20 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
               ))}
             </View>
             <View
-              className="mt-2 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5 py-3 flex items-center justify-center"
+              className="mt-2 rounded-xl border border-dashed border-emerald-500/60 bg-emerald-500/5 py-4 flex items-center justify-center"
               role="button"
               ariaRole="button"
               ariaLabel="添加其他费用"
               onClick={addOtherFeeItem}>
-              <Text className="text-base font-medium text-emerald-600">+ 添加其他费用</Text>
+              <Text className="text-2xl font-medium text-emerald-600">+ 添加其他费用</Text>
             </View>
           </View>
 
           <View>
-            <Text className="text-base text-muted-foreground mb-2 block">凭证图片（最多9张）</Text>
+            <Text className="text-lg text-muted-foreground mb-2 block">凭证图片（最多9张）</Text>
             <View className="flex flex-row flex-wrap gap-2">
               {card.receipt_images.map((img, index) => (
-                <View key={img.path} className="relative h-20 w-20">
+                <View key={img.path} className="relative h-24 w-24">
                   <Image
                     src={img.path}
                     className="h-full w-full rounded-lg"
@@ -387,7 +387,7 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
                     onClick={() => previewImage(index)}
                   />
                   <View
-                    className="absolute -top-3 -right-3 h-11 w-11 flex items-center justify-center"
+                    className="absolute -top-3 -right-3 tap-target flex items-center justify-center"
                     role="button"
                     ariaRole="button"
                     ariaLabel={`删除第${index + 1}张凭证图片`}
@@ -400,21 +400,21 @@ export default function VehicleCardComponent({card, feeTypes, onChange}: Vehicle
               ))}
               {card.receipt_images.length < 9 && (
                 <View
-                  className="h-20 w-20 rounded-lg border border-dashed border-border bg-muted/50 flex flex-col items-center justify-center"
+                  className="h-24 w-24 rounded-lg border border-dashed border-border bg-muted/50 flex flex-col items-center justify-center"
                   role="button"
                   ariaRole="button"
                   ariaLabel="上传凭证图片"
                   onClick={handleChooseImages}>
-                  <View className="i-mdi-camera-plus text-muted-foreground text-2xl" />
-                  <Text className="text-xs text-muted-foreground mt-1">上传</Text>
+                  <View className="i-mdi-camera-plus text-muted-foreground text-3xl" />
+                  <Text className="text-sm text-muted-foreground mt-1">上传</Text>
                 </View>
               )}
             </View>
           </View>
 
-          <View className="rounded-xl bg-primary/10 px-3 py-3 flex flex-row items-center justify-between">
-            <Text className="text-base text-foreground font-medium">本车费用小计</Text>
-            <Text className="text-xl font-bold text-primary">¥{card.total.toFixed(2)}</Text>
+          <View className="field-box rounded-xl bg-primary/10 px-4 flex flex-row items-center justify-between">
+            <Text className="text-lg text-foreground font-medium">本车费用小计</Text>
+            <Text className="text-money text-primary">¥{card.total.toFixed(2)}</Text>
           </View>
       </View>
     </View>

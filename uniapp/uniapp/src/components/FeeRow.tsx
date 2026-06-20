@@ -44,8 +44,9 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
     <>
       <View className="flex flex-col gap-2">
         <View className="flex flex-row items-center gap-2">
-          <View className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-3">
+          <View className="field-box min-w-0 flex-1 rounded-xl border border-border bg-background px-3">
             <View
+              className="w-full"
               role="button"
               ariaRole="button"
               ariaLabel={
@@ -54,13 +55,13 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
                   : '选择费用类型'
               }
               onClick={() => setSelectorOpen(true)}>
-              <Text className="text-xl text-foreground">{selectedType?.display_name || '选择费用类型'}</Text>
+              <Text className="text-2xl text-foreground">{selectedType?.display_name || '选择费用类型'}</Text>
             </View>
           </View>
-  
-          <View className="w-28 shrink-0 rounded-xl border border-border bg-background px-3 py-3">
+
+          <View className="field-box w-32 shrink-0 rounded-xl border border-border bg-background px-3">
             <Input
-              className="w-full text-lg text-right text-foreground"
+              className="w-full h-9 text-2xl text-right text-foreground"
               type="digit"
               placeholder="金额"
               ariaLabel={`${selectedType?.display_name || '费用'}金额`}
@@ -70,7 +71,7 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
           </View>
   
           <View
-            className="h-11 w-11 shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
+            className="tap-target shrink-0 flex items-center justify-center rounded-full bg-destructive/10"
             role="button"
             ariaRole="button"
             ariaLabel={`删除${selectedType?.display_name || '费用'}行`}
@@ -80,10 +81,10 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
         </View>
 
         {feeItem.field_name && (
-          <View className="rounded-xl border border-border bg-background px-3 py-3">
-            <Text className="mb-2 block text-sm text-muted-foreground">地点/备注（选填）</Text>
+          <View className="rounded-xl border border-border bg-background px-3 py-4">
+            <Text className="mb-2 block text-base text-muted-foreground">地点/备注（选填）</Text>
             <Input
-              className="w-full text-base text-foreground"
+              className="w-full text-lg text-foreground"
               placeholder="如：北投、桂福"
               ariaLabel={`${selectedType?.display_name || '费用'}地点或备注`}
               value={feeItem.note || ''}
@@ -112,7 +113,7 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
                     className={`flex flex-row items-center justify-between px-4 ${
                       isActive ? 'bg-emerald-500/10' : 'bg-background'
                     }`}
-                    style={{minHeight: '52px'}}
+                    style={{minHeight: '60px'}}
                     role="button"
                     ariaRole="button"
                     ariaLabel={`选择${type.display_name}`}
@@ -120,21 +121,21 @@ export default function FeeRow({feeItem, feeTypes, onChange, onDelete}: FeeRowPr
                       applyFeeType(type)
                       setSelectorOpen(false)
                     }}>
-                    <Text className={`text-[18px] ${isActive ? 'font-semibold text-emerald-600' : 'text-foreground'}`}>
+                    <Text className={`text-2xl ${isActive ? 'font-semibold text-emerald-600' : 'text-foreground'}`}>
                       {type.display_name}
                     </Text>
-                    <Text className={`text-xl ${isActive ? 'text-emerald-600' : 'text-transparent'}`}>✓</Text>
+                    <Text className={`text-2xl ${isActive ? 'text-emerald-600' : 'text-transparent'}`}>✓</Text>
                   </View>
                 )
               })}
             </ScrollView>
             <View
-              className="mt-3 flex items-center justify-center rounded-2xl bg-muted py-4"
+              className="btn-jumbo mt-3 flex items-center justify-center rounded-2xl bg-muted"
               role="button"
               ariaRole="button"
               ariaLabel="取消选择费用类型"
               onClick={() => setSelectorOpen(false)}>
-              <Text className="text-lg font-medium text-foreground">取消</Text>
+              <Text className="text-2xl font-medium text-foreground">取消</Text>
             </View>
           </View>
         </View>

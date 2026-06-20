@@ -2,6 +2,7 @@ export interface OcrSuccessResponse {
   success: true;
   text: string;
   lineCount: number;
+  pageCount?: number;
   elapsedMs: number;
   detections: Array<{
     text: string;
@@ -20,10 +21,12 @@ export type OcrResponse = OcrSuccessResponse | OcrErrorResponse;
 const OCR_ENDPOINT = '/api/ocr/recognize';
 
 export const MAX_IMAGE_SIZE_MB = 10;
+export const MAX_PDF_SIZE_MB = 20;
 export const MAX_IMAGES_PER_MESSAGE = 5;
-export const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/jpg,image/png,image/webp';
+export const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/jpg,image/png,image/webp,application/pdf';
 
 const ACCEPTED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+const ACCEPTED_OCR_MIME_TYPES = new Set([...ACCEPTED_IMAGE_MIME_TYPES, 'application/pdf']);
 
 export async function recognizeImage(file: File): Promise<OcrSuccessResponse> {
   const formData = new FormData();
@@ -50,7 +53,7 @@ export async function recognizeImage(file: File): Promise<OcrSuccessResponse> {
 }
 
 export function isImageFile(file: File): boolean {
-  return file.type.startsWith('image/');
+  return file.type.startsWith('image/') || file.type === 'application/pdf';
 }
 
 export function isAcceptedImageFile(file: File): boolean {
@@ -58,11 +61,12 @@ export function isAcceptedImageFile(file: File): boolean {
 }
 
 export function validateImageFile(file: File): string | null {
-  if (!isAcceptedImageFile(file)) {
+  if (!ACCEPTED_OCR_MIME_TYPES.has(file.type)) {
     return 'invalid_type';
   }
 
-  if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+  const maxSize = file.type === 'application/pdf' ? MAX_PDF_SIZE_MB : MAX_IMAGE_SIZE_MB;
+  if (file.size > maxSize * 1024 * 1024) {
     return 'too_large';
   }
 

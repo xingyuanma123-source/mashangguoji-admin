@@ -23,11 +23,6 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/nvidia': {
-        target: 'https://integrate.api.nvidia.com',
-        changeOrigin: true,
-        rewrite: (proxyPath) => proxyPath.replace(/^\/api\/nvidia/, '/v1'),
-      },
       '/api/ocr': {
         target: 'http://119.91.129.106',
         changeOrigin: true,
@@ -36,6 +31,14 @@ export default defineConfig({
             proxyReq.removeHeader('origin');
           });
         },
+      },
+      '/api/db': {
+        target: 'http://127.0.0.1:3002',
+        changeOrigin: false,
+      },
+      '/api/agent': {
+        target: 'http://127.0.0.1:3003',
+        changeOrigin: false,
       },
     },
   },

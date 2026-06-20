@@ -12,6 +12,11 @@ import type { DashboardStats, DriverMonthStats } from '@/types/database';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/common/PageHeader';
+import { ResponsiveTable, TableEmptyRow } from '@/components/common/DataTable';
+import PageErrorState from '@/components/common/PageErrorState';
+import ContractExpiryCard from '@/components/dashboard/ContractExpiryCard';
+import LegalRadarCard from '@/components/dashboard/LegalRadarCard';
 
 const DashboardPage: React.FC = () => {
   const { t } = useTranslation();
@@ -19,22 +24,25 @@ const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [driverStats, setDriverStats] = useState<DriverMonthStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const isCurrentMonth = selectedMonth === format(new Date(), 'yyyy-MM');
 
-  const loadData = async () => {
+  const loadData = async (forceRefresh = false) => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [dashboardData, driverData] = await Promise.all([
         getDashboardStats(today, selectedMonth),
-        getDriverMonthStats(selectedMonth),
+        getDriverMonthStats(selectedMonth, { forceRefresh }),
       ]);
       setStats(dashboardData);
       setDriverStats(driverData);
     } catch (error) {
       console.error('加载数据失败:', error);
+      setLoadError(error);
       toast.error(t('toast.loadDataFailed'));
     } finally {
       setLoading(false);
@@ -52,13 +60,11 @@ const DashboardPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* 顶部信息栏 */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('dashboard.title')}</h1>
-            <p className="text-muted-foreground mt-1">{t('dashboard.currentDate', { date: format(new Date(), 'yyyy年MM月dd日') })}</p>
-          </div>
-          <div className="flex items-center gap-4">
+        <PageHeader
+          title={t('dashboard.title')}
+          description={t('dashboard.currentDate', { date: format(new Date(), 'yyyy年MM月dd日') })}
+          actions={
+            <>
             <div className="flex items-center gap-2">
               <Label>{t('dashboard.viewMonth')}</Label>
               <input
@@ -68,11 +74,17 @@ const DashboardPage: React.FC = () => {
                 className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
-            <Button onClick={loadData} variant="outline" size="sm">
+            <Button onClick={() => loadData(true)} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               {t('common.refreshData')}
             </Button>
-          </div>
+            </>
+          }
+        />
+        {loadError !== null && <PageErrorState error={loadError} onRetry={() => loadData(true)} />}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ContractExpiryCard />
+          <LegalRadarCard />
         </div>
 
         {/* 今日概况卡片组 - 只在当前月份显示 */}
@@ -194,7 +206,7 @@ const DashboardPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <Table>
+              <ResponsiveTable minWidth="860px">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('common.driver')}</TableHead>
@@ -209,11 +221,7 @@ const DashboardPage: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {driverStats.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground">
-                        {t('common.noData')}
-                      </TableCell>
-                    </TableRow>
+                    <TableEmptyRow colSpan={8} label={t('common.noData')} />
                   ) : (
                     driverStats.map((driver) => (
                       <TableRow key={driver.driver_id} className="hover:bg-muted/50 cursor-pointer">
@@ -237,7 +245,7 @@ const DashboardPage: React.FC = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>

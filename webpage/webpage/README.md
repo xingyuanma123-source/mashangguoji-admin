@@ -28,6 +28,19 @@
 
 ## 本地开发
 
+数据库访问通过 `db-proxy` 注入 Supabase service role，并使用 HttpOnly Cookie 保存后台登录态。service role 密钥不能放进前端 `.env`。
+
+先配置并启动数据库代理：
+
+```bash
+npm --prefix db-proxy install
+cp db-proxy/.env.example db-proxy/.env
+# 编辑 db-proxy/.env，填写 SUPABASE_URL、SUPABASE_SERVICE_KEY 和 SESSION_SECRET
+npm --prefix db-proxy start
+```
+
+再启动前端：
+
 ```bash
 npm install
 npm run dev
@@ -69,11 +82,41 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## 环境变量
 
-在 `.env` 中配置：
+前端 `.env` 可配置：
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
 - `VITE_APP_ID`
+
+`VITE_SUPABASE_URL` 已不再直接用于浏览器数据库访问。需要覆盖默认同源代理地址时，可设置 `VITE_SUPABASE_PROXY_URL`。
+
+`db-proxy/.env` 必须配置：
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY`
+- `SESSION_SECRET`
+
+生产环境填写 `db-proxy/.env` 后使用 PM2 启动代理：
+
+```bash
+pm2 start db-proxy/ecosystem.config.js
+pm2 save
+```
+
+然后在 Nginx 的 `location /` 之前添加：
+
+```nginx
+location /api/db/ {
+    proxy_pass http://127.0.0.1:3002;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    client_max_body_size 50M;
+    proxy_read_timeout 60s;
+    proxy_connect_timeout 10s;
+}
+```
 
 ## JT808 TCP 服务部署
 

@@ -3,13 +3,15 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const tencentcloud = require('tencentcloud-sdk-nodejs-ocr');
+const { PDFDocument } = require('pdf-lib');
 
 const OcrClient = tencentcloud.ocr.v20181119.Client;
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '127.0.0.1';
-const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '10', 10);
+const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '20', 10);
+const MAX_PDF_PAGES = 20;
 const REGION = process.env.OCR_REGION || 'ap-guangzhou';
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
@@ -50,8 +52,8 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(new Error('只支持图片文件（jpg/png/webp）'));
+    if (!file.mimetype.startsWith('image/') && file.mimetype !== 'application/pdf') {
+      return cb(new Error('只支持图片或 PDF 文件'));
     }
     cb(null, true);
   },
@@ -75,11 +77,22 @@ app.post('/api/ocr/recognize', upload.single('image'), async (req, res) => {
 
     console.log(`[OCR] 开始识别: ${fileName} (${(fileSize / 1024).toFixed(1)} KB)`);
 
-    const response = await ocrClient.GeneralAccurateOCR({
-      ImageBase64: imageBase64,
-    });
+    let pageCount = 1;
+    if (req.file.mimetype === 'application/pdf') {
+      const pdf = await PDFDocument.load(req.file.buffer);
+      pageCount = pdf.getPageCount();
+      if (pageCount > MAX_PDF_PAGES) {
+        return res.status(400).json({ success: false, error: `PDF 最多支持 ${MAX_PDF_PAGES} 页，请拆分后上传` });
+      }
+    }
 
-    const textDetections = response.TextDetections || [];
+    const textDetections = [];
+    for (let page = 1; page <= pageCount; page += 1) {
+      const response = await ocrClient.GeneralAccurateOCR(req.file.mimetype === 'application/pdf'
+        ? { ImageBase64: imageBase64, IsPdf: true, PdfPageNumber: page }
+        : { ImageBase64: imageBase64 });
+      textDetections.push(...(response.TextDetections || []));
+    }
     const recognizedText = textDetections
       .map((item) => item.DetectedText)
       .filter(Boolean)
@@ -94,6 +107,7 @@ app.post('/api/ocr/recognize', upload.single('image'), async (req, res) => {
       success: true,
       text: recognizedText,
       lineCount: textDetections.length,
+      pageCount,
       elapsedMs: elapsed,
       detections: textDetections.map((item) => ({
         text: item.DetectedText,
@@ -136,7 +150,7 @@ app.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({
       success: false,
-      error: `图片过大，最多支持 ${MAX_FILE_SIZE_MB}MB`,
+      error: `文件过大，最多支持 ${MAX_FILE_SIZE_MB}MB`,
     });
   }
   console.error('[Error]', err);

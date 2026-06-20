@@ -11,21 +11,25 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { getAllServiceStaff, createServiceStaff, updateServiceStaff, deleteServiceStaff, createOperationLog } from '@/db/api';
-import type { ServiceStaff } from '@/types/database';
+import type { ServiceStaffSession } from '@/types/database';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/common/PageHeader';
+import { ResponsiveTable, TableActionsCell, TableActionsHead, TableEmptyRow, TableLoadingState } from '@/components/common/DataTable';
+import PageErrorState from '@/components/common/PageErrorState';
 
 const StaffPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [staff, setStaff] = useState<ServiceStaff[]>([]);
+  const [staff, setStaff] = useState<ServiceStaffSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<ServiceStaff | null>(null);
-  const [deleteStaff, setDeleteStaff] = useState<ServiceStaff | null>(null);
+  const [editingStaff, setEditingStaff] = useState<ServiceStaffSession | null>(null);
+  const [deleteStaff, setDeleteStaff] = useState<ServiceStaffSession | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -37,20 +41,22 @@ const StaffPage: React.FC = () => {
     loadStaff();
   }, []);
 
-  const loadStaff = async () => {
+  const loadStaff = async (forceRefresh = false) => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const data = await getAllServiceStaff();
+      const data = await getAllServiceStaff({ forceRefresh });
       setStaff(data);
     } catch (error) {
       console.error('加载客服列表失败:', error);
+      setLoadError(error);
       toast.error(t('toast.loadStaffFailed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenDialog = (staffMember?: ServiceStaff) => {
+  const handleOpenDialog = (staffMember?: ServiceStaffSession) => {
     if (staffMember) {
       setEditingStaff(staffMember);
       setFormData({
@@ -158,10 +164,12 @@ const StaffPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('staff.title')}</h1>
-          <div className="flex items-center gap-2">
-            <Button onClick={loadStaff} variant="outline" size="sm">
+        <PageHeader
+          title={t('staff.title')}
+          description={t('staff.description')}
+          actions={
+            <>
+            <Button onClick={() => loadStaff(true)} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               {t('common.refresh')}
             </Button>
@@ -169,37 +177,35 @@ const StaffPage: React.FC = () => {
               <Plus className="h-4 w-4 mr-2" />
               {t('staff.add')}
             </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
+        {loadError !== null && <PageErrorState error={loadError} onRetry={() => loadStaff(true)} />}
 
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+              <TableLoadingState label={t('common.loading')} />
             ) : (
-              <Table>
+              <ResponsiveTable minWidth="720px">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('common.name')}</TableHead>
                     <TableHead>{t('common.username')}</TableHead>
                     <TableHead>{t('common.role')}</TableHead>
                     <TableHead>{t('common.createdAt')}</TableHead>
-                    <TableHead>{t('common.actions')}</TableHead>
+                    <TableActionsHead>{t('common.actions')}</TableActionsHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {staff.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t('common.noData')}
-                      </TableCell>
-                    </TableRow>
+                    <TableEmptyRow colSpan={5} label={t('common.noData')} />
                   ) : (
                     staff.map((staffMember) => (
                       <TableRow key={staffMember.id}>
                         <TableCell className="font-medium">{staffMember.name}</TableCell>
                         <TableCell>{staffMember.username}</TableCell>
-                        <TableCell>
+                        <TableActionsCell>
                           {staffMember.role === 'admin' ? (
                             <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
                               {t('common.admin')}
@@ -207,7 +213,7 @@ const StaffPage: React.FC = () => {
                           ) : (
                             <Badge variant="outline">{t('common.staff')}</Badge>
                           )}
-                        </TableCell>
+                        </TableActionsCell>
                         <TableCell>{format(new Date(staffMember.created_at), 'yyyy-MM-dd')}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -237,7 +243,7 @@ const StaffPage: React.FC = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>

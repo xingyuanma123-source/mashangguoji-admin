@@ -3,6 +3,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Map as MapIcon, RefreshCw, Search, Truck } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
+import PageErrorState from '@/components/common/PageErrorState';
+import PageHeader from '@/components/common/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -144,6 +146,8 @@ const VehicleTracking: React.FC = () => {
   const [refreshing, setRefreshing] = React.useState(false);
   const [lastRefreshTime, setLastRefreshTime] = React.useState<Date | null>(null);
   const [mapReady, setMapReady] = React.useState(false);
+  const [loadError, setLoadError] = React.useState<unknown>(null);
+  const [mobileView, setMobileView] = React.useState<'list' | 'map'>('map');
 
   const filteredVehicles = React.useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -328,6 +332,7 @@ const VehicleTracking: React.FC = () => {
 
     try {
       const data = await fetchVehicleTrackingData();
+      setLoadError(null);
       setVehicles(data);
       vehicleMapRef.current = new globalThis.Map(data.map((item) => [item.id, item]));
       updateMarkerLayer(data);
@@ -349,7 +354,10 @@ const VehicleTracking: React.FC = () => {
       });
     } catch (error) {
       console.error('加载车辆定位数据失败:', error);
-      toast.error(t('tracking.loadFailed'));
+      setLoadError(error);
+      if (!silent) {
+        toast.error(t('tracking.loadFailed'));
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -375,6 +383,14 @@ const VehicleTracking: React.FC = () => {
     };
   }, [initializeMap, loadData]);
 
+  React.useEffect(() => {
+    if (mobileView !== 'map') return;
+    const frame = window.requestAnimationFrame(() => {
+      mapRef.current?.resize?.();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [mobileView]);
+
   const handleVehicleSelect = (vehicle: VehicleTrackingItem) => {
     setSelectedVehicleId(vehicle.id);
     if (!vehicle.hasLocation) {
@@ -383,6 +399,7 @@ const VehicleTracking: React.FC = () => {
     }
 
     openVehicleInfo(vehicle, true);
+    setMobileView('map');
   };
 
   const selectedVehicle = selectedVehicleId === null
@@ -392,12 +409,11 @@ const VehicleTracking: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold border-b pb-4 mb-3">{t('tracking.title')}</h1>
-            <p className="text-muted-foreground">{t('tracking.subtitle')}</p>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm">
+        <PageHeader
+          title={t('tracking.title')}
+          description={t('tracking.subtitle')}
+          actions={
+            <div className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 sm:justify-end">
             <div className="text-right">
               <div className="text-xs text-muted-foreground">{t('tracking.lastRefresh')}</div>
               <div className="text-sm font-medium">
@@ -409,10 +425,23 @@ const VehicleTracking: React.FC = () => {
               {t('common.refresh')}
             </Button>
           </div>
+          }
+        />
+        {loadError !== null && <PageErrorState error={loadError} onRetry={() => loadData(true)} />}
+
+        <div className="grid grid-cols-2 gap-2 md:hidden">
+          <Button variant={mobileView === 'list' ? 'default' : 'outline'} onClick={() => setMobileView('list')}>
+            <Truck className="mr-2 h-4 w-4" />
+            {t('tracking.listView')}
+          </Button>
+          <Button variant={mobileView === 'map' ? 'default' : 'outline'} onClick={() => setMobileView('map')}>
+            <MapIcon className="mr-2 h-4 w-4" />
+            {t('tracking.mapView')}
+          </Button>
         </div>
 
-        <div className="grid h-[calc(100vh-12rem)] min-h-[640px] grid-cols-[280px_minmax(0,1fr)] gap-6">
-          <Card className="flex h-full flex-col overflow-hidden border shadow-sm">
+        <div className="grid h-[calc(100dvh-15rem)] min-h-[520px] grid-cols-1 gap-4 md:h-[calc(100vh-12rem)] md:min-h-[640px] md:grid-cols-[280px_minmax(0,1fr)] md:gap-6">
+          <Card className={cn('h-full flex-col overflow-hidden border shadow-sm md:flex', mobileView === 'list' ? 'flex' : 'hidden')}>
             <div className="border-b p-4">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -476,7 +505,7 @@ const VehicleTracking: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="relative h-full overflow-hidden border shadow-sm">
+          <Card className={cn('relative h-full overflow-hidden border shadow-sm md:block', mobileView === 'map' ? 'block' : 'hidden')}>
             <div ref={mapContainerRef} className="h-full w-full bg-slate-100" />
 
             {!mapReady && (

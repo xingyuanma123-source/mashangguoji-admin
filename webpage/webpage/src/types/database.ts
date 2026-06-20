@@ -9,6 +9,8 @@ export interface ServiceStaff {
   created_at: string;
 }
 
+export type ServiceStaffSession = Omit<ServiceStaff, 'password'>;
+
 export interface Driver {
   id: number;
   name: string;
@@ -20,6 +22,8 @@ export interface Driver {
   is_active: boolean;
   created_at: string;
 }
+
+export type DriverProfile = Omit<Driver, 'password'>;
 
 export type VehicleType = 'own' | 'affiliated' | 'rented';
 export type VehicleDataSource = 'verified' | 'legacy' | 'manual';
@@ -163,7 +167,7 @@ export interface ExpenseRecord {
   confirmed_at?: string;
   created_at: string;
   updated_at: string;
-  driver?: Driver;
+  driver?: DriverProfile;
   other_fees?: OtherFeeItem[];
 }
 
@@ -194,15 +198,15 @@ export interface AdvanceFundRecord {
   month: string;
   note?: string;
   created_at: string;
-  driver?: Driver;
+  driver?: DriverProfile;
 }
 
 export interface OperationLog {
   id: number;
   operator_id: number;
   operator_name: string;
-  action: 'confirm' | 'edit' | 'create' | 'update' | 'delete';
-  target_type: 'expense_record' | 'driver' | 'vehicle' | 'advance_fund' | 'fee_type' | 'staff';
+  action: 'confirm' | 'edit' | 'create' | 'update' | 'delete' | 'renew' | 'terminate';
+  target_type: 'expense_record' | 'driver' | 'vehicle' | 'advance_fund' | 'fee_type' | 'staff' | 'contract' | 'legal_document';
   target_id: number;
   detail?: string;
   created_at: string;
@@ -219,11 +223,11 @@ export interface LegalReview {
 
 // 扩展类型，用于前端显示
 export interface ExpenseRecordWithDriver extends ExpenseRecord {
-  driver: Driver;
+  driver: DriverProfile;
 }
 
 export interface AdvanceFundRecordWithDriver extends AdvanceFundRecord {
-  driver: Driver;
+  driver: DriverProfile;
 }
 
 // 统计数据类型

@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useState} from 'react'
 import Taro, {useDidShow} from '@tarojs/taro'
-import type {TabBarItem} from '@tarojs/taro'
 import {useAuth} from '@/contexts/AuthContext'
 
 // Public pages that don't require authentication
@@ -10,17 +9,6 @@ const LOGIN_PAGE_PATH = '/pages/login/index'
 
 // Storage key for saving redirect path after login
 export const STORAGE_KEY_REDIRECT_PATH = 'loginRedirectPath'
-
-function getTabBarPages(): string[] {
-  const app = Taro.getApp()
-  const tabBarList = app?.config?.tabBar?.list || []
-  return tabBarList.map((item: TabBarItem) => `/${item.pagePath}`)
-}
-
-function isTabBarPage(path: string): boolean {
-  const tabBarPages = getTabBarPages()
-  return tabBarPages.some((tabBarPath) => path?.includes(tabBarPath))
-}
 
 // Throttled navigation to prevent duplicate redirects
 let isNavigating = false
@@ -33,8 +21,9 @@ function navigateToLogin(currentPath: string): void {
 
   // Save current path for redirect after login
   Taro.setStorageSync(STORAGE_KEY_REDIRECT_PATH, currentPath)
-  const navigateMethod = isTabBarPage(currentPath) ? Taro.navigateTo : Taro.redirectTo
-  navigateMethod({url: LOGIN_PAGE_PATH})
+  // reLaunch 清空页面栈：登录页成为唯一页面，返回键直接退出小程序。
+  // 若用 navigateTo/redirectTo，返回会弹回被守卫的页面又被压回登录页，造成"退不出去"
+  Taro.reLaunch({url: LOGIN_PAGE_PATH})
 
   // Reset flag after 100ms
   setTimeout(() => {
