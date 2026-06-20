@@ -10,24 +10,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, RefreshCw, Trash2, Eye } from 'lucide-react';
 import { getAdvanceFundStats, getAllDrivers, getAdvanceFundRecords, createAdvanceFundRecord, deleteAdvanceFundRecord, createOperationLog } from '@/db/api';
-import type { AdvanceFundStats, Driver, AdvanceFundRecordWithDriver } from '@/types/database';
+import type { AdvanceFundStats, DriverProfile, AdvanceFundRecordWithDriver } from '@/types/database';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/common/PageHeader';
+import { ResponsiveTable, TableActionsCell, TableActionsHead, TableEmptyRow, TableLoadingState } from '@/components/common/DataTable';
+import PageErrorState from '@/components/common/PageErrorState';
+import { firstLoadError } from '@/lib/loadError';
 
 const AdvanceFundsPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [stats, setStats] = useState<AdvanceFundStats[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [drivers, setDrivers] = useState<DriverProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+  const [supportError, setSupportError] = useState<unknown>(null);
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [driverId, setDriverId] = useState('');
   const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [selectedDriver, setSelectedDriver] = useState<DriverProfile | null>(null);
   const [detailRecords, setDetailRecords] = useState<AdvanceFundRecordWithDriver[]>([]);
   const [deleteRecord, setDeleteRecord] = useState<AdvanceFundRecordWithDriver | null>(null);
   const [rechargeForm, setRechargeForm] = useState({
@@ -44,20 +50,23 @@ const AdvanceFundsPage: React.FC = () => {
     loadStats();
   }, [month, driverId]);
 
-  const loadDrivers = async () => {
+  const loadDrivers = async (forceRefresh = false) => {
+    setSupportError(null);
     try {
-      const driverList = await getAllDrivers(true);
+      const driverList = await getAllDrivers(true, { forceRefresh });
       setDrivers(driverList);
     } catch (error) {
       console.error('加载司机列表失败:', error);
+      setSupportError(error);
       toast.error(t('toast.loadDriversFailed'));
     }
   };
 
-  const loadStats = async () => {
+  const loadStats = async (forceRefresh = false) => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const data = await getAdvanceFundStats(month);
+      const data = await getAdvanceFundStats(month, { forceRefresh });
       if (driverId) {
         setStats(data.filter(s => s.driver_id === Number(driverId)));
       } else {
@@ -65,13 +74,14 @@ const AdvanceFundsPage: React.FC = () => {
       }
     } catch (error) {
       console.error('加载备用金数据失败:', error);
+      setLoadError(error);
       toast.error(t('advanceFunds.loadFailed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenRechargeDialog = (driver: Driver) => {
+  const handleOpenRechargeDialog = (driver: DriverProfile) => {
     setSelectedDriver(driver);
     setRechargeForm({
       amount: '',
@@ -119,7 +129,7 @@ const AdvanceFundsPage: React.FC = () => {
     }
   };
 
-  const handleOpenDetailDialog = async (driver: Driver) => {
+  const handleOpenDetailDialog = async (driver: DriverProfile) => {
     setSelectedDriver(driver);
     try {
       const records = await getAdvanceFundRecords({
@@ -186,16 +196,25 @@ const AdvanceFundsPage: React.FC = () => {
     return { monthStart, monthEnd };
   };
 
+  const pageError = firstLoadError(loadError, supportError);
+  const refreshPage = () => {
+    void Promise.all([loadDrivers(true), loadStats(true)]);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('advanceFunds.title')}</h1>
-          <Button onClick={loadStats} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {t('common.refresh')}
-          </Button>
-        </div>
+        <PageHeader
+          title={t('advanceFunds.title')}
+          description={t('advanceFunds.description')}
+          actions={
+            <Button onClick={refreshPage} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t('common.refresh')}
+            </Button>
+          }
+        />
+        {pageError !== null && <PageErrorState error={pageError} onRetry={refreshPage} />}
 
         {/* 筛选栏 */}
         <Card>
@@ -237,25 +256,21 @@ const AdvanceFundsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+              <TableLoadingState label={t('common.loading')} />
             ) : (
-              <Table>
+              <ResponsiveTable minWidth="760px">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('common.driver')}</TableHead>
                     <TableHead className="text-right">{t('advanceFunds.rechargeTotal')}</TableHead>
                     <TableHead className="text-right">{t('advanceFunds.confirmedExpense')}</TableHead>
                     <TableHead className="text-right">{t('advanceFunds.balance')}</TableHead>
-                    <TableHead>{t('common.actions')}</TableHead>
+                    <TableActionsHead>{t('common.actions')}</TableActionsHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {stats.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t('common.noData')}
-                      </TableCell>
-                    </TableRow>
+                    <TableEmptyRow colSpan={5} label={t('common.noData')} />
                   ) : (
                     stats.map((stat) => {
                       const driver = drivers.find(d => d.id === stat.driver_id);
@@ -268,7 +283,7 @@ const AdvanceFundsPage: React.FC = () => {
                           <TableCell className="text-right font-semibold">
                             ¥{stat.balance.toFixed(2)}
                           </TableCell>
-                          <TableCell>
+                          <TableActionsCell>
                             <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
@@ -287,13 +302,13 @@ const AdvanceFundsPage: React.FC = () => {
                                 {t('common.details')}
                               </Button>
                             </div>
-                          </TableCell>
+                          </TableActionsCell>
                         </TableRow>
                       );
                     })
                   )}
                 </TableBody>
-              </Table>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>
@@ -349,23 +364,19 @@ const AdvanceFundsPage: React.FC = () => {
             <DialogTitle>{t('advanceFunds.detailDialog', { name: selectedDriver?.name })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Table>
+            <ResponsiveTable minWidth="680px">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('common.date')}</TableHead>
                   <TableHead>{t('common.type')}</TableHead>
                   <TableHead className="text-right">{t('common.amount')}</TableHead>
                   <TableHead>{t('common.remarks')}</TableHead>
-                  <TableHead>{t('common.actions')}</TableHead>
+                  <TableActionsHead>{t('common.actions')}</TableActionsHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {detailRecords.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
-                      {t('advanceFunds.noRechargeRecords')}
-                    </TableCell>
-                  </TableRow>
+                  <TableEmptyRow colSpan={5} label={t('advanceFunds.noRechargeRecords')} />
                 ) : (
                   detailRecords.map((record) => (
                     <TableRow key={record.id}>
@@ -373,7 +384,7 @@ const AdvanceFundsPage: React.FC = () => {
                       <TableCell>{t('advanceFunds.recharge')}</TableCell>
                       <TableCell className="text-right">¥{Number(record.amount).toFixed(2)}</TableCell>
                       <TableCell>{record.note || '-'}</TableCell>
-                      <TableCell>
+                      <TableActionsCell>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -385,12 +396,12 @@ const AdvanceFundsPage: React.FC = () => {
                           <Trash2 className="h-4 w-4 mr-1" />
                           {t('common.delete')}
                         </Button>
-                      </TableCell>
+                      </TableActionsCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
-            </Table>
+            </ResponsiveTable>
 
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between">

@@ -5,6 +5,8 @@ import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
+import PageErrorState from '@/components/common/PageErrorState';
+import PageHeader from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -25,6 +27,7 @@ import {
   type TrailerListFilters,
   type TruckListFilters,
 } from '@/features/vehicles/api';
+import { useTranslation } from 'react-i18next';
 import {
   CompanySelect,
   DataSourceBadge,
@@ -68,6 +71,7 @@ function normalizeOptional(value: string) {
 }
 
 const VehiclesPage: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -140,6 +144,11 @@ const VehiclesPage: React.FC = () => {
   const models = modelsQuery.data ?? [];
   const truckResult = trucksQuery.data;
   const trailerResult = trailersQuery.data;
+  const activeListQuery = isTrailerTab ? trailersQuery : trucksQuery;
+  const loadError = activeListQuery.error
+    ?? statsQuery.error
+    ?? companiesQuery.error
+    ?? (!isTrailerTab ? modelsQuery.error : null);
 
   const setTruckFilter = <K extends keyof TruckListFilters>(key: K, value: TruckListFilters[K]) => {
     setTruckFilters((current) => ({
@@ -157,12 +166,18 @@ const VehiclesPage: React.FC = () => {
     }));
   };
 
-  const refreshActiveTab = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['vehicle-stats'] }),
-      queryClient.invalidateQueries({ queryKey: isTrailerTab ? ['trailers'] : ['trucks'] }),
+  const refreshActiveTab = async (showSuccess = true) => {
+    const results = await Promise.all([
+      statsQuery.refetch(),
+      activeListQuery.refetch(),
+      companiesQuery.refetch(),
+      ...(!isTrailerTab ? [modelsQuery.refetch()] : []),
     ]);
-    toast.success('已刷新');
+    if (results.some((result) => result.isError)) {
+      toast.error(t('toast.loadVehiclesFailed'));
+      return;
+    }
+    if (showSuccess) toast.success('已刷新');
   };
 
   const submitManualTruck = (values: ManualTruckForm) => {
@@ -191,22 +206,23 @@ const VehiclesPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">车辆管理</h1>
-            <p className="mt-1 text-sm text-muted-foreground">管理车头、车挂、证件和车挂分配关系</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={refreshActiveTab} variant="outline" size="sm">
+        <PageHeader
+          title={t('vehicles.title')}
+          description={t('vehicles.description')}
+          actions={
+            <>
+            <Button onClick={() => void refreshActiveTab()} variant="outline" size="sm">
               <RefreshCw className="mr-2 h-4 w-4" />
-              刷新
+              {t('common.refresh')}
             </Button>
             <Button onClick={() => setDialogOpen(true)} size="sm">
               <Plus className="mr-2 h-4 w-4" />
-              新增车辆
+              {t('vehicles.add')}
             </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
+        {loadError && <PageErrorState error={loadError} onRetry={() => void refreshActiveTab(false)} />}
 
         <StatCards stats={statsQuery.data} loading={statsQuery.isLoading} />
 
@@ -291,7 +307,7 @@ const VehiclesPage: React.FC = () => {
                         </CardContent>
                       </Card>
                     ))
-                  ) : (
+                  ) : trucksQuery.isError ? null : (
                     <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">暂无车辆</div>
                   )}
                 </div>
@@ -344,7 +360,7 @@ const VehiclesPage: React.FC = () => {
                         </CardContent>
                       </Card>
                     ))
-                  ) : (
+                  ) : trailersQuery.isError ? null : (
                     <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">暂无车挂</div>
                   )}
                 </div>

@@ -8,16 +8,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RefreshCw } from 'lucide-react';
 import { getOperationLogs, getAllServiceStaff } from '@/db/api';
-import type { OperationLog, ServiceStaff } from '@/types/database';
+import type { OperationLog, ServiceStaffSession } from '@/types/database';
 import { format, subDays } from 'date-fns';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/AuthContext';
+import PageHeader from '@/components/common/PageHeader';
+import { ResponsiveTable, TableEmptyRow, TableLoadingState } from '@/components/common/DataTable';
+import PageErrorState from '@/components/common/PageErrorState';
+import { firstLoadError } from '@/lib/loadError';
 
 const LogsPage: React.FC = () => {
   const { t } = useTranslation();
+  const { user, isAdmin } = useAuth();
   const [logs, setLogs] = useState<OperationLog[]>([]);
-  const [staff, setStaff] = useState<ServiceStaff[]>([]);
+  const [staff, setStaff] = useState<ServiceStaffSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+  const [supportError, setSupportError] = useState<unknown>(null);
   const [filters, setFilters] = useState({
     operatorId: '',
     action: '',
@@ -26,25 +34,35 @@ const LogsPage: React.FC = () => {
   });
 
   useEffect(() => {
-    loadStaff();
-  }, []);
+    if (!user) return;
+    if (isAdmin) {
+      void loadStaff();
+      return;
+    }
+
+    setStaff([user]);
+    setFilters((current) => ({ ...current, operatorId: String(user.id) }));
+  }, [isAdmin, user]);
 
   useEffect(() => {
     loadLogs();
   }, [filters]);
 
-  const loadStaff = async () => {
+  const loadStaff = async (forceRefresh = false) => {
+    setSupportError(null);
     try {
-      const data = await getAllServiceStaff();
+      const data = await getAllServiceStaff({ forceRefresh });
       setStaff(data);
     } catch (error) {
       console.error('加载客服列表失败:', error);
+      setSupportError(error);
       toast.error(t('toast.loadStaffFailed'));
     }
   };
 
   const loadLogs = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await getOperationLogs({
         operatorId: filters.operatorId ? Number(filters.operatorId) : undefined,
@@ -56,6 +74,7 @@ const LogsPage: React.FC = () => {
       setLogs(data);
     } catch (error) {
       console.error('加载操作日志失败:', error);
+      setLoadError(error);
       toast.error(t('toast.loadLogsFailed'));
     } finally {
       setLoading(false);
@@ -69,6 +88,8 @@ const LogsPage: React.FC = () => {
       create: t('logs.actions.create'),
       update: t('logs.actions.update'),
       delete: t('logs.actions.delete'),
+      renew: t('logs.actions.renew'),
+      terminate: t('logs.actions.terminate'),
     };
     return actionMap[action] || action;
   };
@@ -81,20 +102,31 @@ const LogsPage: React.FC = () => {
       advance_fund: t('logs.targets.advance_fund'),
       fee_type: t('logs.targets.fee_type'),
       staff: t('logs.targets.staff'),
+      contract: t('logs.targets.contract'),
+      legal_document: t('logs.targets.legal_document'),
     };
     return typeMap[targetType] || targetType;
+  };
+
+  const pageError = firstLoadError(loadError, supportError);
+  const refreshPage = () => {
+    void Promise.all([loadLogs(), ...(isAdmin ? [loadStaff(true)] : [])]);
   };
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('logs.title')}</h1>
-          <Button onClick={loadLogs} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {t('common.refresh')}
-          </Button>
-        </div>
+        <PageHeader
+          title={t('logs.title')}
+          description={t('logs.description')}
+          actions={
+            <Button onClick={refreshPage} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t('common.refresh')}
+            </Button>
+          }
+        />
+        {pageError !== null && <PageErrorState error={pageError} onRetry={refreshPage} />}
 
         {/* 筛选栏 */}
         <Card>
@@ -102,12 +134,16 @@ const LogsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>{t('logs.operator')}</Label>
-                <Select value={filters.operatorId || 'all'} onValueChange={(value) => setFilters({ ...filters, operatorId: value === 'all' ? '' : value })}>
+                <Select
+                  value={filters.operatorId || 'all'}
+                  disabled={!isAdmin}
+                  onValueChange={(value) => setFilters({ ...filters, operatorId: value === 'all' ? '' : value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t('common.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t('common.all')}</SelectItem>
+                    {isAdmin && <SelectItem value="all">{t('common.all')}</SelectItem>}
                     {staff.map((s) => (
                       <SelectItem key={s.id} value={s.id.toString()}>
                         {s.name}
@@ -129,6 +165,8 @@ const LogsPage: React.FC = () => {
                     <SelectItem value="create">{t('logs.actions.create')}</SelectItem>
                     <SelectItem value="update">{t('logs.actions.update')}</SelectItem>
                     <SelectItem value="delete">{t('logs.actions.delete')}</SelectItem>
+                    <SelectItem value="renew">{t('logs.actions.renew')}</SelectItem>
+                    <SelectItem value="terminate">{t('logs.actions.terminate')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -156,9 +194,9 @@ const LogsPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+              <TableLoadingState label={t('common.loading')} />
             ) : (
-              <Table>
+              <ResponsiveTable minWidth="860px">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('logs.time')}</TableHead>
@@ -170,11 +208,7 @@ const LogsPage: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {logs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t('common.noData')}
-                      </TableCell>
-                    </TableRow>
+                    <TableEmptyRow colSpan={5} label={t('common.noData')} />
                   ) : (
                     logs.map((log) => (
                       <TableRow key={log.id}>
@@ -189,7 +223,7 @@ const LogsPage: React.FC = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>

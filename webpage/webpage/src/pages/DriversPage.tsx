@@ -10,21 +10,25 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Power, RefreshCw, Key } from 'lucide-react';
 import { getAllDrivers, createDriver, updateDriver, createOperationLog } from '@/db/api';
-import type { Driver } from '@/types/database';
+import type { DriverProfile } from '@/types/database';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/common/PageHeader';
+import { ResponsiveTable, TableActionsCell, TableActionsHead, TableEmptyRow, TableLoadingState } from '@/components/common/DataTable';
+import PageErrorState from '@/components/common/PageErrorState';
 
 const DriversPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [drivers, setDrivers] = useState<DriverProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [resetPasswordDriver, setResetPasswordDriver] = useState<Driver | null>(null);
+  const [editingDriver, setEditingDriver] = useState<DriverProfile | null>(null);
+  const [resetPasswordDriver, setResetPasswordDriver] = useState<DriverProfile | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -35,20 +39,22 @@ const DriversPage: React.FC = () => {
     loadDrivers();
   }, []);
 
-  const loadDrivers = async () => {
+  const loadDrivers = async (forceRefresh = false) => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const data = await getAllDrivers();
+      const data = await getAllDrivers(false, { forceRefresh });
       setDrivers(data);
     } catch (error) {
       console.error('加载司机列表失败:', error);
+      setLoadError(error);
       toast.error(t('toast.loadDriversFailed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenDialog = (driver?: Driver) => {
+  const handleOpenDialog = (driver?: DriverProfile) => {
     if (driver) {
       setEditingDriver(driver);
       setFormData({
@@ -118,7 +124,7 @@ const DriversPage: React.FC = () => {
     }
   };
 
-  const handleToggleActive = async (driver: Driver) => {
+  const handleToggleActive = async (driver: DriverProfile) => {
     if (!user) return;
     try {
       await updateDriver(driver.id, { is_active: !driver.is_active });
@@ -165,10 +171,12 @@ const DriversPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('drivers.title')}</h1>
-          <div className="flex items-center gap-2">
-            <Button onClick={loadDrivers} variant="outline" size="sm">
+        <PageHeader
+          title={t('drivers.title')}
+          description={t('drivers.description')}
+          actions={
+            <>
+            <Button onClick={() => loadDrivers(true)} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               {t('common.refresh')}
             </Button>
@@ -176,8 +184,10 @@ const DriversPage: React.FC = () => {
               <Plus className="h-4 w-4 mr-2" />
               {t('drivers.add')}
             </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
+        {loadError !== null && <PageErrorState error={loadError} onRetry={() => loadDrivers(true)} />}
 
         <Card>
           <CardContent className="pt-6">
@@ -191,31 +201,27 @@ const DriversPage: React.FC = () => {
             </div>
 
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+              <TableLoadingState label={t('common.loading')} />
             ) : (
-              <Table>
+              <ResponsiveTable minWidth="760px">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('common.name')}</TableHead>
                     <TableHead>{t('common.username')}</TableHead>
                     <TableHead>{t('common.status')}</TableHead>
                     <TableHead>{t('common.createdAt')}</TableHead>
-                    <TableHead>{t('common.actions')}</TableHead>
+                    <TableActionsHead>{t('common.actions')}</TableActionsHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDrivers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t('common.noData')}
-                      </TableCell>
-                    </TableRow>
+                    <TableEmptyRow colSpan={5} label={t('common.noData')} />
                   ) : (
                     filteredDrivers.map((driver) => (
                       <TableRow key={driver.id}>
                         <TableCell className="font-medium">{driver.name}</TableCell>
                         <TableCell>{driver.username}</TableCell>
-                        <TableCell>
+                        <TableActionsCell>
                           {driver.is_active ? (
                             <Badge variant="outline" className="bg-success/10 text-success border-success">
                               {t('common.active')}
@@ -225,7 +231,7 @@ const DriversPage: React.FC = () => {
                               {t('common.inactive')}
                             </Badge>
                           )}
-                        </TableCell>
+                        </TableActionsCell>
                         <TableCell>{format(new Date(driver.created_at), 'yyyy-MM-dd')}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -259,7 +265,7 @@ const DriversPage: React.FC = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>

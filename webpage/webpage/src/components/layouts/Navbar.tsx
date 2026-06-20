@@ -18,8 +18,8 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, isAdmin } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

@@ -73,7 +73,9 @@
     "inputUsername": "请输入账号",
     "inputPassword": "请输入密码",
     "defaultPassword": "默认密码：123456",
-    "leavePasswordBlank": "留空则不修改密码"
+    "leavePasswordBlank": "留空则不修改密码",
+    "none": "无",
+    "unknownError": "未知错误"
   },
   "nav": {
     "dashboard": "数据看板",
@@ -86,15 +88,47 @@
     "feeTypes": "费用类型管理",
     "staff": "客服账号管理",
     "logs": "操作日志",
-    "legal": "合同法务",
+    "legal": "AI 法务咨询",
+    "legalContracts": "合同台账",
+    "legalLibrary": "法律文件库",
     "systemSettings": "系统设置",
+    "groups": {
+      "workspace": "工作台",
+      "operations": "业务处理",
+      "legal": "法务",
+      "fleet": "车队管理",
+      "system": "系统管理"
+    },
     "logout": "退出",
     "logoutTitle": "退出登录",
     "expandSidebar": "展开侧边栏",
-    "collapseSidebar": "收起侧边栏"
+    "collapseSidebar": "收起侧边栏",
+    "menu": "导航菜单",
+    "openMenu": "打开导航菜单",
+    "legalAgent": "法务 Agent",
+    "legalPlaybook": "法务 Playbook"
   },
   "login": {
     "title": "账号登录"
+  },
+  "errors": {
+    "retry": "重新加载",
+    "auth": {
+      "title": "登录状态已失效",
+      "description": "当前会话无法继续访问数据，请重新登录后再试。"
+    },
+    "permission": {
+      "title": "没有访问权限",
+      "description": "当前账号没有读取这些数据的权限。"
+    },
+    "service": {
+      "title": "数据服务暂时不可用",
+      "description": "无法连接数据库代理或上游服务，请稍后重新加载。"
+    },
+    "generic": {
+      "title": "数据加载失败",
+      "description": "加载过程中出现异常，请重新加载。"
+    }
   },
   "toast": {
     "loadDataFailed": "加载数据失败",
@@ -151,12 +185,21 @@
   },
   "expenses": {
     "title": "报账管理",
+    "description": "审核司机报账、填写提成并处理待确认记录",
     "route": "路线/地点",
     "expense": "支出",
     "commission": "提成",
     "noRecords": "暂无报账记录",
     "batchCommission": "批量填提成",
     "batchConfirm": "批量确认",
+    "batchToolbarTitle": "批量处理待确认报账",
+    "batchEmptyHint": "当前列表有 {{count}} 条待确认记录，请先勾选需要处理的记录",
+    "batchSelectionHint": "批量操作仅会处理已选择的待确认记录",
+    "selectPendingFirst": "请先选择待确认记录",
+    "clearSelection": "清除选择",
+    "selectAllPending": "选择当前列表中的全部待确认记录",
+    "selectRecord": "选择 {{driver}} 在 {{date}} 驾驶 {{vehicle}} 的报账记录",
+    "review": "审核",
     "confirmTitle": "确认操作",
     "confirmDescription": "确定要确认选中的 {{count}} 条报账记录吗？确认后将无法修改。",
     "batchCommissionTitle": "批量填写提成",
@@ -182,6 +225,7 @@
   },
   "summary": {
     "title": "总表",
+    "description": "按日期和司机汇总报账数据，并导出统计结果",
     "groupByDate": "按日期分组",
     "groupByDriver": "按司机分组",
     "summaryInfo": "汇总信息",
@@ -199,6 +243,7 @@
   },
   "drivers": {
     "title": "司机管理",
+    "description": "维护司机账号、在职状态和登录密码",
     "add": "新增司机",
     "edit": "编辑司机",
     "resetPassword": "重置密码",
@@ -208,6 +253,7 @@
   },
   "vehicles": {
     "title": "车辆管理",
+    "description": "管理车头、车挂、证件和车挂分配关系",
     "add": "新增车辆",
     "edit": "编辑车辆",
     "plateNumber": "车牌号",
@@ -223,6 +269,7 @@
   },
   "advanceFunds": {
     "title": "备用金管理",
+    "description": "查看司机备用金余额、充值记录和已确认支出",
     "overview": "各司机备用金概览",
     "recharge": "充值",
     "rechargeTotal": "充值合计",
@@ -245,6 +292,7 @@
   },
   "feeTypes": {
     "title": "费用类型管理",
+    "description": "维护司机报账时可使用的费用字段和显示顺序",
     "add": "新增费用类型",
     "edit": "编辑费用类型",
     "fieldNameEn": "字段名（英文）",
@@ -262,6 +310,7 @@
   },
   "staff": {
     "title": "客服账号管理",
+    "description": "管理后台客服账号及其管理员权限",
     "add": "新增客服",
     "edit": "编辑客服",
     "cannotDeleteSelf": "不能删除自己",
@@ -269,6 +318,7 @@
   },
   "logs": {
     "title": "操作日志",
+    "description": "查询后台关键操作记录，追踪数据修改来源",
     "operator": "操作人",
     "actionType": "操作类型",
     "time": "时间",
@@ -280,7 +330,9 @@
       "edit": "修改",
       "create": "新增",
       "update": "更新",
-      "delete": "删除"
+      "delete": "删除",
+      "renew": "续约",
+      "terminate": "终止"
     },
     "targets": {
       "expense_record": "报账记录",
@@ -288,7 +340,9 @@
       "vehicle": "车辆",
       "advance_fund": "备用金",
       "fee_type": "费用类型",
-      "staff": "客服账号"
+      "staff": "客服账号",
+      "contract": "合同",
+      "legal_document": "法律文件"
     }
   },
   "tracking": {
@@ -300,6 +354,8 @@
     "invalidTime": "时间异常",
     "none": "暂无",
     "searchPlate": "搜索车牌号",
+    "listView": "车辆列表",
+    "mapView": "地图",
     "loading": "加载定位数据中...",
     "noMatches": "没有匹配的车辆",
     "noLocation": "无定位",
@@ -316,8 +372,10 @@
     "noAvailableLocation": "该车辆暂无可用定位"
   },
   "legal": {
-    "title": "合同法务",
-    "subtitle": "面向马上国际的跨境物流业务场景，聚焦合同审查、经营风险判断和模板复用。",
+    "title": "AI 法务咨询",
+    "subtitle": "基于法律文件库与业务事实，辅助解答合同、货损、分包责任和跨境运输争议问题。",
+    "aiContext": "连续上下文问答",
+    "libraryGrounded": "法律文件库依据",
     "riskPerspective": "跨境物流风险视角",
     "templatesBuiltIn": "合同模板内置",
     "contractReview": "合同审查",
@@ -350,7 +408,7 @@
     "reviewFailed": "合同审查失败，请稍后重试。",
     "requestFailed": "请求失败",
     "consultDescription": "保留完整上下文历史，优先回答物流合同、货损赔偿、分包责任和跨境运输争议问题。",
-    "consultPlaceholderNoKey": "请先配置 VITE_NVIDIA_API_KEY 后再发起咨询",
+    "consultPlaceholderNoKey": "模型服务暂时不可用",
     "consultPlaceholder": "请输入合同、货损赔偿、分包责任或跨境运输争议相关问题",
     "noConsult": "还没有咨询记录。可以直接提问承运赔偿上限、分包追偿条款、货损举证责任或争议解决条款风险。",
     "send": "发送",
@@ -388,10 +446,175 @@
     "templateCopied": "模板内容已复制",
     "copyFailed": "复制失败，请手动选择文本",
     "doubleClickToSelectAll": "双击可全选内容",
-    "noTemplates": "暂无可用模板"
+    "noTemplates": "暂无可用模板",
+    "libraryContext": "文件库依据（最多 3 份）",
+    "noLibraryDocuments": "暂无可选文件",
+    "contracts": {
+      "title": "合同台账",
+      "description": "合同生命周期、到期预警与 AI 风险扫描",
+      "add": "新增合同",
+      "edit": "编辑",
+      "renew": "续约",
+      "terminate": "终止合同",
+      "searchPlaceholder": "搜索标题、对方或编号",
+      "allStatus": "全部状态",
+      "alertTitle": "合同到期预警",
+      "markHandled": "标记已处理",
+      "renewalDeadline": "续约/解约通知截止：",
+      "expiryDeadline": "合同到期：",
+      "daysLeft": "{{count}} 天",
+      "period": "起止日期",
+      "loading": "正在加载合同...",
+      "empty": "暂无合同，点击右上角新增",
+      "loadFailed": "加载合同失败",
+      "detailLoadFailed": "加载合同详情失败",
+      "riskScan": "风险扫描",
+      "templateDiff": "模板对照",
+      "attachments": "附件",
+      "noAttachments": "暂无附件",
+      "reports": "AI 审查报告",
+      "noReports": "暂无报告",
+      "scanFile": "合同及相关法律文档（常见文档、表格、图片、压缩包均可）",
+      "ocrLoading": "正在读取文档并抽取字段，请稍候",
+      "ocrComplete": "文档读取完成，请人工核对后保存",
+      "ocrFailed": "文档自动读取失败：{{error}}，文件仍可作为附件保存，请手动录入",
+      "fileTooLarge": "文件过大",
+      "invalidFile": "不支持该文件格式，请上传常见法律文档、图片或压缩包",
+      "attachmentOnly": "该格式将作为合同附件保存，暂不支持自动读取正文，请手动填写合同信息",
+      "requiredFields": "请填写合同标题和对方单位",
+      "renewDatesRequired": "续约合同必须填写新的开始日期和到期日期",
+      "created": "合同已保存",
+      "updated": "合同已更新",
+      "renewedSuccess": "合同续约完成",
+      "saveFailed": "保存失败",
+      "noFieldChanges": "未修改字段",
+      "noOcrText": "该合同没有可审查的 OCR 正文",
+      "templateNoText": "所选模板没有可用正文",
+      "riskScanComplete": "风险扫描完成",
+      "templateDiffComplete": "模板对照完成",
+      "reviewFailed": "审查失败",
+      "templateLoadFailed": "加载模板失败",
+      "terminateConfirm": "确定终止该合同吗？",
+      "terminatedSuccess": "合同已终止",
+      "terminateFailed": "终止合同失败",
+      "selectTemplate": "选择对照模板",
+      "template": "合同模板",
+      "noTemplates": "文件库中暂无模板",
+      "startTemplateDiff": "开始模板对照",
+      "renewedFrom": "续约自：{{title}}",
+      "renewedTo": "已续约为：{{title}}",
+      "dialogTitles": {
+        "create": "新增合同",
+        "edit": "编辑合同",
+        "renew": "续约合同"
+      },
+      "dialogDescriptions": {
+        "create": "录入合同信息，可上传法律文档自动提取或作为附件保存。",
+        "edit": "修改合同可编辑字段并保存变更。",
+        "renew": "继承原合同信息并填写新的合同周期。"
+      },
+      "templateDialogDescription": "从法律文件库选择一份合同模板进行条款偏离对照。",
+      "submit": {
+        "create": "人工核对后保存",
+        "edit": "保存修改",
+        "renew": "确认续约"
+      },
+      "statuses": {
+        "active": "履行中",
+        "expired": "已过期",
+        "renewed": "已续约",
+        "terminated": "已终止"
+      },
+      "categories": {
+        "transport": "运输合同",
+        "lease": "租赁合同",
+        "labor": "劳动合同",
+        "purchase": "采购合同",
+        "service": "服务合同",
+        "other": "其他"
+      },
+      "fields": {
+        "title": "合同标题",
+        "contract_no": "合同编号",
+        "counterparty": "对方单位",
+        "category": "合同类别",
+        "amount": "金额",
+        "currency": "币种",
+        "sign_date": "签署日期",
+        "start_date": "开始日期",
+        "end_date": "到期日期",
+        "auto_renew": "自动续约",
+        "renew_notice_days": "解约通知期（天）",
+        "owner_staff_id": "负责人",
+        "remark": "备注",
+        "status": "状态"
+      },
+      "reviewTypes": {
+        "risk_scan": "风险扫描",
+        "template_diff": "模板对照"
+      },
+      "riskLevels": {
+        "high": "高风险",
+        "medium": "中风险",
+        "low": "低风险"
+      }
+    },
+    "library": {
+      "title": "法律文件库",
+      "description": "模板、制度、法规与诉讼文书的版本化存档",
+      "upload": "上传文件",
+      "uploadTitle": "上传法律文件",
+      "uploadDescription": "填写文件信息并上传首个版本。",
+      "newVersion": "发布新版本",
+      "searchPlaceholder": "搜索标题或正文",
+      "allTypes": "全部分类",
+      "delete": "删除文档",
+      "askAi": "向 AI 提问",
+      "loading": "正在加载法律文件...",
+      "empty": "暂无文件，点击右上角上传",
+      "loadFailed": "加载法律文件失败",
+      "versionLoadFailed": "加载版本记录失败",
+      "requiredFields": "请填写标题并选择文件",
+      "uploaded": "文件已入库",
+      "uploadFailed": "上传失败",
+      "versionPublished": "新版本已发布",
+      "versionFailed": "发布失败",
+      "deleteConfirm": "确定删除该文档吗？",
+      "deleted": "文档已删除",
+      "deleteFailed": "删除文档失败",
+      "noVersions": "暂无版本记录",
+      "fields": {
+        "title": "标题",
+        "type": "分类",
+        "tags": "标签",
+        "tagsHint": "标签（逗号分隔）",
+        "file": "文件",
+        "version": "当前版本",
+        "updatedAt": "更新时间"
+      },
+      "types": {
+        "template": "合同模板",
+        "policy": "制度文件",
+        "regulation": "法律法规",
+        "litigation": "诉讼文书",
+        "authorization": "授权文件",
+        "other": "其他"
+      },
+      "textStatuses": {
+        "done": "正文已提取",
+        "pending": "等待提取",
+        "failed": "提取失败"
+      }
+    }
   },
   "editExpense": {
     "title": "查看报账记录",
+    "reviewTitle": "审核报账记录",
+    "editTitle": "编辑报账记录",
+    "reviewHintTitle": "请完成审核后再确认",
+    "reviewHintDescription": "重点核对路线、费用明细、支出合计、提成和账单图片。确认通过后，普通客服将无法继续修改。",
+    "confirmApproval": "确认通过",
+    "confirmingApproval": "确认中...",
     "feeDetails": "费用明细",
     "feeName": "费用名称",
     "feeAmount": "费用金额",

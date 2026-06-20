@@ -7,19 +7,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Label } from '@/components/ui/label';
 import { Download, RefreshCw, Image, ChevronDown, ChevronRight } from 'lucide-react';
 import { getExpenseRecords, getAllDrivers, getAdvanceFundRecords } from '@/db/api';
-import type { ExpenseRecordWithDriver, Driver, AdvanceFundRecordWithDriver } from '@/types/database';
+import type { ExpenseRecordWithDriver, DriverProfile, AdvanceFundRecordWithDriver } from '@/types/database';
 import { format, startOfMonth, endOfMonth, subMonths, subDays, startOfYear } from 'date-fns';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/common/PageHeader';
+import PageErrorState from '@/components/common/PageErrorState';
+import { ResponsiveTable, TableEmptyRow, TableLoadingState } from '@/components/common/DataTable';
+import { firstLoadError } from '@/lib/loadError';
 
 const SummaryPage: React.FC = () => {
   const { t } = useTranslation();
   const [records, setRecords] = useState<ExpenseRecordWithDriver[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [drivers, setDrivers] = useState<DriverProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+  const [supportError, setSupportError] = useState<unknown>(null);
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -60,18 +66,21 @@ const SummaryPage: React.FC = () => {
     loadRecords();
   }, [startDate, endDate, driverId]);
 
-  const loadDrivers = async () => {
+  const loadDrivers = async (forceRefresh = false) => {
+    setSupportError(null);
     try {
-      const driverList = await getAllDrivers(true);
+      const driverList = await getAllDrivers(true, { forceRefresh });
       setDrivers(driverList);
     } catch (error) {
       console.error('加载司机列表失败:', error);
+      setSupportError(error);
       toast.error(t('toast.loadDriversFailed'));
     }
   };
 
   const loadRecords = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await getExpenseRecords({
         driverId: driverId ? Number(driverId) : undefined,
@@ -82,6 +91,7 @@ const SummaryPage: React.FC = () => {
       setRecords(data);
     } catch (error) {
       console.error('加载总表数据失败:', error);
+      setLoadError(error);
       toast.error(t('toast.loadDataFailed'));
     } finally {
       setLoading(false);
@@ -380,13 +390,20 @@ const SummaryPage: React.FC = () => {
     setEndDate(format(now, 'yyyy-MM-dd'));
   };
 
+  const pageError = firstLoadError(loadError, supportError);
+  const refreshPage = () => {
+    void Promise.all([loadDrivers(true), loadRecords()]);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('summary.title')}</h1>
-          <div className="flex items-center gap-2">
-            <Button onClick={loadRecords} variant="outline" size="sm">
+        <PageHeader
+          title={t('summary.title')}
+          description={t('summary.description')}
+          actions={
+            <>
+            <Button onClick={refreshPage} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               {t('common.refresh')}
             </Button>
@@ -407,8 +424,10 @@ const SummaryPage: React.FC = () => {
               <Image className="h-4 w-4 mr-2" />
               {t('common.exportImages')}
             </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
+        {pageError !== null && <PageErrorState error={pageError} onRetry={refreshPage} />}
 
         {/* 筛选栏 */}
         <Card>
@@ -432,7 +451,7 @@ const SummaryPage: React.FC = () => {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 <Button variant="outline" size="sm" onClick={() => applyDateRange('thisMonth')}>
                   {t('summary.thisMonth')}
                 </Button>
@@ -493,12 +512,10 @@ const SummaryPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
-            ) : records.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.noData')}</div>
+              <TableLoadingState label={t('common.loading')} />
             ) : (
               <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
-                <Table>
+                <ResponsiveTable minWidth="760px">
                   <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
                       <TableHead className="w-8"></TableHead>
@@ -510,7 +527,9 @@ const SummaryPage: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedGroupKeys.map((groupKey) => {
+                    {records.length === 0 ? (
+                      <TableEmptyRow colSpan={6} label={t('common.noData')} />
+                    ) : sortedGroupKeys.map((groupKey) => {
                       const group = groupedRecords[groupKey];
                       const isExpanded = expandedGroups.has(groupKey);
                       const totalExpense = group.records.reduce((sum, r) => sum + Number(r.total_expense), 0);
@@ -560,7 +579,7 @@ const SummaryPage: React.FC = () => {
                       );
                     })}
                   </TableBody>
-                </Table>
+                </ResponsiveTable>
               </div>
             )}
           </CardContent>

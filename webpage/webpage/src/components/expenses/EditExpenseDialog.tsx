@@ -18,6 +18,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle2, ClipboardCheck } from 'lucide-react';
 
 interface EditExpenseDialogProps {
   open: boolean;
@@ -395,16 +397,41 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
     }
   };
 
+  const handleConfirm = async () => {
+    if (!record || !onConfirm) return;
+    setLoading(true);
+    try {
+      await onConfirm(record.id);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!record) return null;
+
+  const isPendingReview = record.status === 'pending' && !isEditing;
+  const dialogTitle = isEditing
+    ? t('editExpense.editTitle')
+    : isPendingReview
+      ? t('editExpense.reviewTitle')
+      : t('editExpense.title');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent ref={dialogContentRef} className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent ref={dialogContentRef} className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-3xl overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>{t('editExpense.title')}</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          {isPendingReview && (
+            <Alert className="border-primary/30 bg-primary/5">
+              <ClipboardCheck className="h-4 w-4 text-primary" />
+              <AlertTitle>{t('editExpense.reviewHintTitle')}</AlertTitle>
+              <AlertDescription>{t('editExpense.reviewHintDescription')}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-muted-foreground">{t('common.date')}</Label>
               <Input value={format(new Date(record.record_date), 'yyyy-MM-dd')} disabled />
@@ -415,7 +442,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>{t('vehicles.plateNumber')}</Label>
               <Select value={formData.plate_number} onValueChange={(value) => setFormData({ ...formData, plate_number: value })} disabled={!isEditing}>
@@ -595,8 +622,14 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
             </Button>
           </div>
           {record.status === 'pending' && !isEditing && onConfirm && (
-            <Button onClick={() => onConfirm(record.id)} disabled={loading}>
-              {t('common.confirm')}
+            <Button
+              onClick={handleConfirm}
+              loading={loading}
+              loadingText={t('editExpense.confirmingApproval')}
+              className="bg-success text-success-foreground hover:bg-success/90"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {t('editExpense.confirmApproval')}
             </Button>
           )}
           {!isEditing ? (
@@ -611,7 +644,12 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             {t('common.close')}
           </Button>
-          <Button onClick={isEditing ? handleSubmit : handleSaveCommission} loading={loading} loadingText={t('common.saveLoading')}>
+          <Button
+            variant={!isEditing && record.status === 'pending' ? 'outline' : 'default'}
+            onClick={isEditing ? handleSubmit : handleSaveCommission}
+            loading={loading}
+            loadingText={t('common.saveLoading')}
+          >
             {isEditing ? t('common.save') : t('editExpense.saveCommission')}
           </Button>
         </DialogFooter>

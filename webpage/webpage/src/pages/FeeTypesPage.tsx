@@ -14,12 +14,16 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import PageHeader from '@/components/common/PageHeader';
+import { ResponsiveTable, TableActionsCell, TableActionsHead, TableEmptyRow, TableLoadingState } from '@/components/common/DataTable';
+import PageErrorState from '@/components/common/PageErrorState';
 
 const FeeTypesPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFeeType, setEditingFeeType] = useState<FeeType | null>(null);
   const [formData, setFormData] = useState({
@@ -32,13 +36,15 @@ const FeeTypesPage: React.FC = () => {
     loadFeeTypes();
   }, []);
 
-  const loadFeeTypes = async () => {
+  const loadFeeTypes = async (forceRefresh = false) => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const data = await getAllFeeTypes();
+      const data = await getAllFeeTypes(false, { forceRefresh });
       setFeeTypes(data);
     } catch (error) {
       console.error('加载费用类型失败:', error);
+      setLoadError(error);
       toast.error(t('toast.loadFeeTypesFailed'));
     } finally {
       setLoading(false);
@@ -139,10 +145,12 @@ const FeeTypesPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('feeTypes.title')}</h1>
-          <div className="flex items-center gap-2">
-            <Button onClick={loadFeeTypes} variant="outline" size="sm">
+        <PageHeader
+          title={t('feeTypes.title')}
+          description={t('feeTypes.description')}
+          actions={
+            <>
+            <Button onClick={() => loadFeeTypes(true)} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               {t('common.refresh')}
             </Button>
@@ -150,38 +158,36 @@ const FeeTypesPage: React.FC = () => {
               <Plus className="h-4 w-4 mr-2" />
               {t('feeTypes.add')}
             </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
+        {loadError !== null && <PageErrorState error={loadError} onRetry={() => loadFeeTypes(true)} />}
 
         <Card>
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+              <TableLoadingState label={t('common.loading')} />
             ) : (
-              <Table>
+              <ResponsiveTable minWidth="720px">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('common.fieldName')}</TableHead>
                     <TableHead>{t('common.displayName')}</TableHead>
                     <TableHead>{t('common.sortOrder')}</TableHead>
                     <TableHead>{t('common.status')}</TableHead>
-                    <TableHead>{t('common.actions')}</TableHead>
+                    <TableActionsHead>{t('common.actions')}</TableActionsHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {feeTypes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {t('common.noData')}
-                      </TableCell>
-                    </TableRow>
+                    <TableEmptyRow colSpan={5} label={t('common.noData')} />
                   ) : (
                     feeTypes.map((feeType) => (
                       <TableRow key={feeType.id}>
                         <TableCell className="font-mono text-sm">{feeType.field_name}</TableCell>
                         <TableCell className="font-medium">{feeType.display_name}</TableCell>
                         <TableCell>{feeType.sort_order}</TableCell>
-                        <TableCell>
+                        <TableActionsCell>
                           {feeType.is_active ? (
                             <Badge variant="outline" className="bg-success/10 text-success border-success">
                               {t('common.enabled')}
@@ -191,7 +197,7 @@ const FeeTypesPage: React.FC = () => {
                               {t('common.disabled')}
                             </Badge>
                           )}
-                        </TableCell>
+                        </TableActionsCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Button
@@ -239,7 +245,7 @@ const FeeTypesPage: React.FC = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>

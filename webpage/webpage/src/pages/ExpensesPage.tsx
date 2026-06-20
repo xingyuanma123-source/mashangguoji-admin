@@ -14,22 +14,28 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { RefreshCw, Inbox, RotateCcw, AlertCircle } from 'lucide-react';
+import { RefreshCw, RotateCcw, AlertCircle, ClipboardCheck, Eye, X } from 'lucide-react';
 import { getExpenseRecords, getAllDrivers, confirmExpenseRecord, unconfirmExpenseRecord, batchConfirmExpenseRecords, batchUpdateCommission, createOperationLog } from '@/db/api';
-import type { ExpenseRecordWithDriver, Driver } from '@/types/database';
+import type { ExpenseRecordWithDriver, DriverProfile } from '@/types/database';
 import { format, startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import EditExpenseDialog from '@/components/expenses/EditExpenseDialog';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/common/PageHeader';
+import PageErrorState from '@/components/common/PageErrorState';
+import { ResponsiveTable, TableActionsCell, TableActionsHead, TableEmptyRow, TableLoadingState } from '@/components/common/DataTable';
+import { firstLoadError } from '@/lib/loadError';
 
 const ExpensesPage: React.FC = () => {
   const { t } = useTranslation();
   const { user, isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [records, setRecords] = useState<ExpenseRecordWithDriver[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [drivers, setDrivers] = useState<DriverProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+  const [supportError, setSupportError] = useState<unknown>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [batchCommissionDialogOpen, setBatchCommissionDialogOpen] = useState(false);
@@ -56,18 +62,21 @@ const ExpensesPage: React.FC = () => {
     loadRecords();
   }, [filters]);
 
-  const loadDrivers = async () => {
+  const loadDrivers = async (forceRefresh = false) => {
+    setSupportError(null);
     try {
-      const driverList = await getAllDrivers(true);
+      const driverList = await getAllDrivers(true, { forceRefresh });
       setDrivers(driverList);
     } catch (error) {
       console.error('加载司机列表失败:', error);
+      setSupportError(error);
       toast.error(t('toast.loadDriversFailed'));
     }
   };
 
   const loadRecords = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await getExpenseRecords({
         driverId: filters.driverId ? Number(filters.driverId) : undefined,
@@ -79,6 +88,7 @@ const ExpensesPage: React.FC = () => {
       setSelectedIds([]);
     } catch (error) {
       console.error('加载报账记录失败:', error);
+      setLoadError(error);
       toast.error(t('toast.loadDataFailed'));
     } finally {
       setLoading(false);
@@ -202,6 +212,9 @@ const ExpensesPage: React.FC = () => {
     );
   };
 
+  const pendingRecords = records.filter((record) => record.status === 'pending');
+  const pageError = firstLoadError(loadError, supportError);
+  const hasSelection = selectedIds.length > 0;
   const activeRecordIndex = activeRecord ? records.findIndex((item) => item.id === activeRecord.id) : -1;
   const hasPrevRecord = activeRecordIndex > 0;
   const hasNextRecord = activeRecordIndex >= 0 && activeRecordIndex < records.length - 1;
@@ -216,22 +229,30 @@ const ExpensesPage: React.FC = () => {
     setActiveRecord(records[activeRecordIndex + 1]);
   };
 
+  const refreshPage = () => {
+    void Promise.all([loadDrivers(true), loadRecords()]);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold border-b pb-4 mb-6">{t('expenses.title')}</h1>
-          <Button onClick={loadRecords} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {t('common.refresh')}
-          </Button>
-        </div>
+        <PageHeader
+          title={t('expenses.title')}
+          description={t('expenses.description')}
+          actions={
+            <Button onClick={refreshPage} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t('common.refresh')}
+            </Button>
+          }
+        />
+        {pageError !== null && <PageErrorState error={pageError} onRetry={refreshPage} />}
 
         {/* 筛选栏 */}
         <Card className="bg-muted/10 border-dashed">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="space-y-2 min-w-[180px] flex-1">
+          <CardContent className="px-3 pt-4 sm:px-6 sm:pt-6">
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="space-y-2">
                 <Label>{t('common.driver')}</Label>
                 <Select value={filters.driverId || 'all'} onValueChange={(value) => setFilters({ ...filters, driverId: value === 'all' ? '' : value })}>
                   <SelectTrigger>
@@ -247,7 +268,7 @@ const ExpensesPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2 min-w-[180px]">
+              <div className="space-y-2">
                 <Label>{t('common.startDate')}</Label>
                 <Input
                   type="date"
@@ -255,7 +276,7 @@ const ExpensesPage: React.FC = () => {
                   onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
                 />
               </div>
-              <div className="space-y-2 min-w-[180px]">
+              <div className="space-y-2">
                 <Label>{t('common.endDate')}</Label>
                 <Input
                   type="date"
@@ -263,7 +284,7 @@ const ExpensesPage: React.FC = () => {
                   onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
                 />
               </div>
-              <div className="space-y-2 min-w-[160px]">
+              <div className="space-y-2">
                 <Label>{t('common.status')}</Label>
                 <Select value={filters.status || 'all'} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
                   <SelectTrigger>
@@ -280,32 +301,62 @@ const ExpensesPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* 批量操作按钮 */}
-        {selectedIds.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{t('common.selectedCount', { count: selectedIds.length })}</span>
-            <Button size="sm" onClick={() => setBatchCommissionDialogOpen(true)}>
+        {/* 常驻批量操作栏 */}
+        <div className="flex flex-col gap-3 rounded-lg border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-sm font-medium">
+              {hasSelection
+                ? t('common.selectedCount', { count: selectedIds.length })
+                : t('expenses.batchToolbarTitle')}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {hasSelection
+                ? t('expenses.batchSelectionHint')
+                : t('expenses.batchEmptyHint', { count: pendingRecords.length })}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            {hasSelection && (
+              <Button size="sm" variant="ghost" className="col-span-2 sm:col-span-1" onClick={() => setSelectedIds([])}>
+                <X className="h-4 w-4" />
+                {t('expenses.clearSelection')}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!hasSelection}
+              title={!hasSelection ? t('expenses.selectPendingFirst') : undefined}
+              onClick={() => setBatchCommissionDialogOpen(true)}
+            >
               {t('expenses.batchCommission')}
             </Button>
-            <Button size="sm" onClick={() => setConfirmDialogOpen(true)}>
+            <Button
+              size="sm"
+              disabled={!hasSelection}
+              title={!hasSelection ? t('expenses.selectPendingFirst') : undefined}
+              onClick={() => setConfirmDialogOpen(true)}
+            >
               {t('expenses.batchConfirm')}
             </Button>
           </div>
-        )}
+        </div>
 
         {/* 报账记录列表 */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="px-0 pt-4 sm:px-6 sm:pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
+              <TableLoadingState label={t('common.loading')} />
             ) : (
-              <Table className="w-full table-auto text-sm">
+              <ResponsiveTable minWidth="900px" className="table-auto">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-9 px-1">
                       <Checkbox
-                        checked={selectedIds.length === records.filter(r => r.status === 'pending').length && records.filter(r => r.status === 'pending').length > 0}
+                        aria-label={t('expenses.selectAllPending')}
+                        checked={selectedIds.length === pendingRecords.length && pendingRecords.length > 0}
                         onCheckedChange={toggleSelectAll}
+                        disabled={pendingRecords.length === 0}
                       />
                     </TableHead>
                     <TableHead className="w-[86px] whitespace-nowrap px-1">{t('common.date')}</TableHead>
@@ -315,19 +366,12 @@ const ExpensesPage: React.FC = () => {
                     <TableHead className="w-[72px] whitespace-nowrap text-right px-1">{t('expenses.expense')}</TableHead>
                     <TableHead className="w-[64px] whitespace-nowrap text-right px-1">{t('expenses.commission')}</TableHead>
                     <TableHead className="w-[64px] whitespace-nowrap px-1">{t('common.status')}</TableHead>
-                    <TableHead className="w-[220px] whitespace-nowrap px-1">{t('common.actions')}</TableHead>
+                    <TableActionsHead className="w-[220px] px-1">{t('common.actions')}</TableActionsHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {records.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center text-muted-foreground">
-                        <div className="flex flex-col items-center justify-center gap-2 py-6">
-                          <Inbox className="h-6 w-6 text-muted-foreground" />
-                          <span>{t('expenses.noRecords')}</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <TableEmptyRow colSpan={9} label={t('expenses.noRecords')} />
                   ) : (
                     records.map((record, index) => (
                       <TableRow
@@ -337,6 +381,11 @@ const ExpensesPage: React.FC = () => {
                         <TableCell className="px-1">
                           {record.status === 'pending' && (
                             <Checkbox
+                              aria-label={t('expenses.selectRecord', {
+                                driver: record.driver?.name || '-',
+                                date: format(new Date(record.record_date), 'yyyy-MM-dd'),
+                                vehicle: record.plate_number || '-',
+                              })}
                               checked={selectedIds.includes(record.id)}
                               onCheckedChange={() => toggleSelect(record.id)}
                             />
@@ -359,15 +408,25 @@ const ExpensesPage: React.FC = () => {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="px-1">
+                        <TableActionsCell className="px-1">
                           <div className="flex items-center gap-1">
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant={record.status === 'pending' ? 'default' : 'ghost'}
                               className="h-7 px-2 text-xs"
                               onClick={() => setActiveRecord(record)}
                             >
-                              {t('common.view')}
+                              {record.status === 'pending' ? (
+                                <>
+                                  <ClipboardCheck className="h-3.5 w-3.5" />
+                                  {t('expenses.review')}
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3.5 w-3.5" />
+                                  {t('common.view')}
+                                </>
+                              )}
                             </Button>
                             {record.status === 'confirmed' && isAdmin && (
                               <Button
@@ -395,12 +454,12 @@ const ExpensesPage: React.FC = () => {
                               </TooltipProvider>
                             )}
                           </div>
-                        </TableCell>
+                        </TableActionsCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
-              </Table>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>
