@@ -1,14 +1,12 @@
 # 协作规范
 
-马上国际单仓库（webpage 网站 / uniapp 小程序 / supabase 后端）。所有改动走 **feature 分支 + PR**，不直接推 `main`。
+马上国际单仓库（webpage 网站 / miniapp 小程序 / supabase 后端）。所有改动走 **feature 分支 + PR**，不直接推 `main`。
 
 ## 仓库结构
 
-> 当前存在 `webpage/webpage`、`uniapp/uniapp` 双层嵌套，将在「解套娃」阶段扁平化为 `webpage/`、`uniapp/`。
-
-- `webpage/webpage/` — React + Vite 管理后台
-- `uniapp/uniapp/` — Taro 微信小程序（司机端）
-- `webpage/webpage/supabase/`、`uniapp/uniapp/supabase/` — 数据库 migration 与边缘函数
+- `webpage/` — React + Vite 管理后台
+- `miniapp/` — Taro 微信小程序（司机端）
+- `webpage/supabase/`、`miniapp/supabase/` — 数据库 migration 与边缘函数
 
 ## 分支命名
 
@@ -24,7 +22,7 @@
 
 ## Commit 规范
 
-[Conventional Commits](https://www.conventionalcommits.org)：`类型(范围): 描述`，例 `feat(legal): 新增合同抽取`。范围常用 `legal` `agent` `uniapp` `backend` `supabase`。
+[Conventional Commits](https://www.conventionalcommits.org)：`类型(范围): 描述`，例 `feat(legal): 新增合同抽取`。范围常用 `legal` `agent` `miniapp` `backend` `supabase`。
 
 ## 工作流
 
@@ -38,7 +36,7 @@
 
 - migration 文件入库 **不会** 自动改动线上库；需显式 apply。
 - PR 中务必注明：是否含 migration、需 apply 到哪个环境（staging / prod）。
-- ⚠️ 目前 webpage 与 uniapp 两套 migration 指向同一个库，正在收敛为单一事实源，新增 migration 前请先沟通。
+- ⚠️ 目前 webpage 与 miniapp 两套 migration 指向同一个库，正在收敛为单一事实源，新增 migration 前请先沟通。
 
 ## 部署提醒
 

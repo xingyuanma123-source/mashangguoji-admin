@@ -14,7 +14,7 @@
 ### 第 1 步：部署 driver-api
 
 ```bash
-cd uniapp/uniapp
+cd miniapp
 supabase functions deploy driver-api
 ```
 
@@ -30,7 +30,7 @@ supabase functions deploy driver-api
 ### 第 3 步：部署 db-proxy
 
 ```bash
-cd webpage/webpage/db-proxy
+cd webpage/db-proxy
 node --check server.js && node --test authorize.test.js   # 本地自检
 pm2 restart ecosystem.config.js                            # 按实际进程管理方式重启
 ```
