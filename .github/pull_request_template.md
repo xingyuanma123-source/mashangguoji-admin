@@ -13,7 +13,7 @@
 
 ## 影响范围
 - [ ] webpage（网站）
-- [ ] uniapp（小程序）
+- [ ] miniapp（小程序）
 - [ ] supabase（数据库 / 边缘函数）
 - [ ] 部署脚本 / CI
 

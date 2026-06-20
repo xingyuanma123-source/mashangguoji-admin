@@ -8,4 +8,4 @@ script = ""
 [[actions]]
 name = "运行"
 icon = "run"
-command = "cd \"/Users/mxy/Desktop/mashang project_副本/webpage/webpage\" && npm run dev -- --host 127.0.0.1 --port 5173"
+command = "cd \"/Users/mxy/Desktop/mashang project_副本/webpage\" && npm run dev -- --host 127.0.0.1 --port 5173"
