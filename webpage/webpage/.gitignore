@@ -28,3 +28,7 @@ package-lock.json
 .sync
 history/*.json
 .vite_cache
+
+# Supabase CLI
+supabase/.temp
+supabase/.branches
