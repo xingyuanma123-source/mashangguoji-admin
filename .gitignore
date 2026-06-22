@@ -17,6 +17,9 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+# 例外：miniapp 的 staging/prod 构建期 env（只含公开级 URL + anon key，无 service_role）
+!miniapp/.env.staging
+!miniapp/.env.production
 
 # IDE
 .idea/

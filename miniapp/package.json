@@ -13,8 +13,11 @@
     "dev": "taro build --type weapp --watch",
     "dev:h5": "taro build --type h5 --watch",
     "dev:weapp": "taro build --type weapp --watch",
+    "dev:staging": "taro build --type weapp --watch --mode staging",
     "build": "taro build --type weapp",
     "build:weapp": "taro build --type weapp",
+    "build:staging": "taro build --type weapp --mode staging",
+    "build:prod": "taro build --type weapp --mode production",
     "build:h5": "taro build --type h5",
     "postinstall": "weapp-tw patch",
     "lint": "./scripts/runLint.sh"
