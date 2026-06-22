@@ -6,7 +6,7 @@
 
 - `webpage/` — React + Vite 管理后台
 - `miniapp/` — Taro 微信小程序（司机端）
-- `webpage/supabase/`、`miniapp/supabase/` — 数据库 migration 与边缘函数
+- `supabase/` — 唯一的数据库 migration（单一基线）/ seed / 边缘函数（webpage 与 miniapp 共用同一个库）
 
 ## 分支命名
 
@@ -36,7 +36,7 @@
 
 - migration 文件入库 **不会** 自动改动线上库；需显式 apply。
 - PR 中务必注明：是否含 migration、需 apply 到哪个环境（staging / prod）。
-- ⚠️ 目前 webpage 与 miniapp 两套 migration 指向同一个库，正在收敛为单一事实源，新增 migration 前请先沟通。
+- migration 已收敛为根 `supabase/` 单一事实源（基线由 prod schema 导出，零漂移验证通过）。新增 migration 一律加在此目录，时间戳命名。
 
 ## 部署提醒
 
