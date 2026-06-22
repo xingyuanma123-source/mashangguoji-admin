@@ -14,7 +14,7 @@
 ### 第 1 步：部署 driver-api
 
 ```bash
-cd miniapp
+# 在仓库根执行（supabase/ 已统一到根目录）
 supabase functions deploy driver-api
 ```
 
