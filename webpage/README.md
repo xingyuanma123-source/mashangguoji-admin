@@ -52,6 +52,14 @@ npm run dev
 npm run lint
 ```
 
+## 前端发布
+
+staging 前端发布使用：
+
+```bash
+SITE_NAME=mashangguoji-staging ./deploy-frontend.sh
+```
+
 ## OCR 代理配置
 
 法律咨询 Chat 的图片识别会请求 `/api/ocr/recognize`。本地开发环境已在 `vite.config.dev.ts` 中代理到 `http://119.91.129.106`；生产环境需要在服务器 Nginx 配置中把 `/api/ocr/` 反代到 OCR 代理服务。
