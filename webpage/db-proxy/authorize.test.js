@@ -106,3 +106,30 @@ test('事项全员可建可改，删除仅管理员', () => {
   assert.equal(authorize('/rest/v1/matters?id=eq.1', { method: 'DELETE', session: admin }).ok, true);
   assert.equal(authorize('/rest/v1/legal_tasks', { method: 'POST', session: staff }).ok, true);
 });
+
+test('派遣模块表允许访问并按客服会话限制写入', () => {
+  assert.equal(authorize('/rest/v1/customers?select=id,name', { session: staff }).ok, true);
+  assert.equal(authorize('/rest/v1/dispatch_records?select=*', { session: staff }).ok, true);
+  assert.equal(authorize('/rest/v1/dispatch_operation_logs?select=*', { session: staff }).ok, true);
+
+  const create = authorize('/rest/v1/dispatch_records', { method: 'POST', session: staff });
+  assert.equal(create.ok, true);
+  assert.equal(create.forceDispatchAgentId, 2);
+
+  const update = authorize('/rest/v1/dispatch_records?id=eq.10', { method: 'PATCH', session: staff });
+  assert.equal(update.ok, true);
+  assert.match(update.path, /agent_id=eq\.2/);
+  assert.equal(update.stripDispatchAgentId, true);
+
+  const adminUpdate = authorize('/rest/v1/dispatch_records?id=eq.10', { method: 'PATCH', session: admin });
+  assert.equal(adminUpdate.ok, true);
+  assert.doesNotMatch(adminUpdate.path, /agent_id=eq\.1/);
+  assert.equal(adminUpdate.stripDispatchAgentId, true);
+
+  assert.equal(authorize('/rest/v1/dispatch_records?id=eq.10', { method: 'DELETE', session: admin }).status, 403);
+
+  const logCreate = authorize('/rest/v1/dispatch_operation_logs', { method: 'POST', session: staff });
+  assert.equal(logCreate.ok, true);
+  assert.equal(logCreate.forceDispatchOperatorId, 2);
+  assert.equal(authorize('/rest/v1/dispatch_operation_logs?id=eq.5', { method: 'PATCH', session: admin }).status, 403);
+});

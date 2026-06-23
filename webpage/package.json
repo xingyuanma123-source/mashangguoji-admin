@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "lint": "tsgo -p tsconfig.check.json",
     "test": "vitest run",
-    "import:documents": "node scripts/import-documents/upload.ts"
+    "import:documents": "node scripts/import-documents/upload.ts",
+    "import:dispatch": "node scripts/import-dispatch-excel.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

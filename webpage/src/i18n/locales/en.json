@@ -83,6 +83,7 @@
     "summary": "Summary",
     "drivers": "Drivers",
     "vehicles": "Vehicles",
+    "dispatch": "Dispatch",
     "vehicleTracking": "Vehicle Tracking",
     "advanceFunds": "Advance Funds",
     "feeTypes": "Fee Types",

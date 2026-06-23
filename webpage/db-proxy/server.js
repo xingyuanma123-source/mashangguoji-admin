@@ -3,7 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const { authorizeSupabaseProxy, scrubPasswords, SENSITIVE_TABLES } = require('./authorize');
+const {
+  authorizeSupabaseProxy,
+  applyProxyManagedFields,
+  scrubPasswords,
+  SENSITIVE_TABLES,
+} = require('./authorize');
 const { buildSessionCookie } = require('./session-cookie');
 
 const app = express();
@@ -214,8 +219,13 @@ app.use('/api/db/supabase', requireSession, async (req, res) => {
     }
 
     let body = ['GET', 'HEAD'].includes(req.method) ? undefined : await readRequestBody(req);
-    if (SENSITIVE_TABLES.includes(decision.table) && body && /json/i.test(req.headers['content-type'] || '')) {
-      body = Buffer.from(JSON.stringify(hashPasswordFields(JSON.parse(body.toString('utf8')))));
+    if (body && /json/i.test(req.headers['content-type'] || '')) {
+      let payload = JSON.parse(body.toString('utf8'));
+      if (SENSITIVE_TABLES.includes(decision.table)) {
+        payload = hashPasswordFields(payload);
+      }
+      payload = applyProxyManagedFields(payload, decision);
+      body = Buffer.from(JSON.stringify(payload));
     }
 
     const upstream = await fetch(`${SUPABASE_URL}${decision.path}`, {

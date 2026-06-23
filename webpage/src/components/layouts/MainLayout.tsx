@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard, FileText, Table, Users, Truck,
   Wallet, List, UserCog, ClipboardList, LogOut, ArrowLeftRight,
-  PanelLeftClose, PanelLeft, Map, FileSpreadsheet, Menu, Library, Bot, BookOpen,
+  PanelLeftClose, PanelLeft, Map, FileSpreadsheet, Menu, Library, Bot, BookOpen, CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -81,6 +81,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       items: [
         { path: '/drivers', label: t('nav.drivers'), icon: Users },
         { path: '/vehicles', label: t('nav.vehicles'), icon: Truck },
+        { path: '/dispatch', label: t('nav.dispatch'), icon: CalendarDays },
         { path: '/vehicle-tracking', label: t('nav.vehicleTracking'), icon: Map },
       ],
     },
