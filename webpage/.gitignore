@@ -14,6 +14,10 @@ output
 *.local
 .env
 package-lock.json
+# 例外：提交锁文件以支持 CI 的 npm ci（webpage 与两个 proxy）
+!/package-lock.json
+!/db-proxy/package-lock.json
+!/agent-proxy/package-lock.json
 
 # Editor directories and files
 .vscode/*

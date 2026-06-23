@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webpage:
+    name: webpage · lint + test + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webpage
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+
+  proxy:
+    name: ${{ matrix.proxy }} · test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        proxy: [db-proxy, agent-proxy]
+    defaults:
+      run:
+        working-directory: webpage/${{ matrix.proxy }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm test
+
+  miniapp:
+    name: miniapp · lint + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.30.3'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+      - run: pnpm install --frozen-lockfile
+      - run: chmod +x scripts/*.sh && pnpm lint
+      - run: pnpm build:staging
