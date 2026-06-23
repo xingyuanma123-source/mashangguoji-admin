@@ -17,8 +17,8 @@ jobs:
       run:
         working-directory: webpage
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
       - run: npm ci
@@ -37,8 +37,8 @@ jobs:
       run:
         working-directory: webpage/${{ matrix.proxy }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
       - run: npm ci
@@ -51,11 +51,11 @@ jobs:
       run:
         working-directory: miniapp
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
         with:
           version: '10.30.3'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
       - run: pnpm install --frozen-lockfile
