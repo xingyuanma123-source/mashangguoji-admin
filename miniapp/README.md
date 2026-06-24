@@ -2,8 +2,6 @@
 
 这是一个为物流公司短驳司机设计的报账微信小程序，支持每日费用报账、多车辆管理、凭证上传、加班记录和备用金管理。
 
-> 本子项目使用 pnpm（见 package.json 的 packageManager）。装依赖/构建一律用 pnpm，不要用 npm —— 用 npm 会因 lockfile 不兼容报错。
-
 ## 🎯 项目简介
 
 **使用人群**: 公司短驳货运司机（约13人）
@@ -48,6 +46,8 @@
 ## 🚀 快速开始
 
 ### 安装依赖
+
+> 本项目使用 pnpm(packageManager: pnpm@10.30.3),请用 pnpm install / pnpm run dev:staging,不要用 npm —— 用 npm 装依赖会因 lockfile 不兼容报错。
 
 ```bash
 pnpm install
