@@ -7,6 +7,7 @@
 - 数据库改动一律先写成 migration 文件，不在库里手动建表/改字段。
 - 表结构变更顺序：先应用到 staging 库（ovtnnahdqljqqkponvhu）验证，确认没问题后再应用到 prod 库。绝不直接改 prod 库结构。
 - prod 库的结构永远来自“已在 staging 验证过的 migration”。
+- 每次涉及 migration 时,先读 `docs/migrations-ledger.md` 确认各 migration 在 staging/prod 的应用状态;按其中 SOP 执行(写 → push staging → 验证 → push prod → 回填台账)。台账是 prod/staging 应用状态的唯一事实来源。
 - staging 和 prod 保持表结构一致，但数据各自独立——staging 是测试数据，prod 是真实数据，互不同步。
 
 ## 环境隔离纪律
@@ -26,6 +27,7 @@
 - 改动走 PR 流程，不直接 push main。CI（build+lint+test）是 main 的门禁，所有 PR 必须 CI 通过才能合并。
 - 数据库或功能改动的验证顺序：先在本地连 staging 库测试 → 通过 → 再上 prod。prod 只接收已在 staging 验证过的版本。
 - 涉及服务器、数据库、CI 的操作，先出计划/方案让用户确认，再动手；用户习惯“先看计划再执行”。碰 prod 的操作尤其要先停下来确认。
+- prod 上线(前端/db-proxy/agent-proxy/ocr-proxy 部署)必须照 `docs/prod-release-runbook.md` 执行:按手册的上线顺序、健康检查、回滚步骤操作,不自行发挥。手册未覆盖或与现状不符时,先停下来和用户确认,再决定是否更新手册。
 
 ## 项目架构概述
 
