@@ -120,13 +120,9 @@ src/
 
 ### 数据库配置
 
-数据库连接信息在 `.env` 文件中：
+当前代码实际在 `src/client/supabase.ts` 中硬编码 prod URL + ANON_KEY，不读取 `.env` 环境变量。
 
-```env
-TARO_APP_SUPABASE_URL=https://rwjbladqwubgjotlygyy.supabase.co
-TARO_APP_SUPABASE_ANON_KEY=...
-TARO_APP_APP_ID=app-a2kae62wkbnl
-```
+TODO：此做法与根目录 `AGENTS.md` 的环境隔离纪律冲突，小程序环境切换待后续纳入（本轮不改代码）。
 
 详细的数据库管理指南请查看 [DATABASE_GUIDE.md](./DATABASE_GUIDE.md)
 
@@ -184,7 +180,7 @@ TARO_APP_APP_ID=app-a2kae62wkbnl
 - ✅ 所有功能已完成
 - ✅ Lint 检查通过
 - ✅ 数据库连接测试通过
-- ✅ 已接入本地数据库
+- ✅ 已接入 prod 数据库
 - ✅ 可以正常使用
 
 ---

@@ -2,14 +2,14 @@
 
 ## 📍 配置位置
 
-数据库连接信息已硬编码在以下文件中：
+当前代码实际把数据库连接信息硬编码在以下文件中：
 
 **文件路径**: `src/client/supabase.ts`
 
 ## 🔧 当前配置
 
 ```typescript
-// Supabase 数据库配置（本地数据库）
+// Supabase 数据库配置（当前硬编码 prod）
 const supabaseUrl: string = 'https://rwjbladqwubgjotlygyy.supabase.co'
 const supabaseAnonKey: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3amJsYWRxd3ViZ2pvdGx5Z3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNDUwNTYsImV4cCI6MjA4ODgyMTA1Nn0.dR9w2xmK9UpbNfO_dEAnJ2FqXcj1S2vQ15xexzskhA4'
 const appId: string = 'app-a2kae62wkbnl'
@@ -17,11 +17,10 @@ const appId: string = 'app-a2kae62wkbnl'
 
 ## 📝 配置说明
 
-### 为什么硬编码？
+### 当前硬编码现状
 
-1. **简化部署**: 不需要配置环境变量，直接构建即可使用
-2. **避免配置错误**: 减少因环境变量配置错误导致的问题
-3. **便于维护**: 配置集中在一个文件中，易于查找和修改
+1. `src/client/supabase.ts` 当前直接配置 prod URL 和 ANON_KEY，不读取环境变量。
+2. TODO：此做法与根目录 `AGENTS.md` 的环境隔离纪律冲突，小程序环境切换待后续纳入（本轮不改代码）。
 
 ### 配置项说明
 
@@ -33,7 +32,7 @@ const appId: string = 'app-a2kae62wkbnl'
 
 ## 🔄 如何修改配置
 
-如果需要切换到其他数据库，请按以下步骤操作：
+当前如果需要切换到其他数据库，只能修改代码后重新构建；后续应改为环境切换机制。
 
 ### 步骤 1: 打开配置文件
 
@@ -70,9 +69,10 @@ npm run build:h5
 
 ### ANON_KEY 的安全性
 
-- **ANON_KEY** 是公开密钥，可以安全地硬编码在客户端代码中
+- **ANON_KEY** 是公开级密钥，不是 `service_role`
 - 它只提供受限的数据库访问权限
 - 实际的数据访问权限由 **RLS（行级安全）策略** 控制
+- 但硬编码 prod 会破坏 staging/prod 环境隔离，后续需纳入小程序环境切换
 
 ### RLS 策略保护
 
@@ -150,5 +150,5 @@ npm run build:h5
 ---
 
 **最后更新**: 2026-03-06
-**配置方式**: 硬编码
+**配置方式**: 硬编码 prod（待纳入环境切换）
 **状态**: ✅ 已配置完成

@@ -233,7 +233,7 @@ async function runAgent(matterId, userMessage, session) {
      → (Phase 3) 企业微信/邮件推送
 ```
 
-### 3.5 数据模型（新增迁移 00007）
+### 3.5 数据模型（已并入 `supabase/migrations/20260621171750_baseline.sql`）
 
 ```sql
 -- 事项：agent 工作的组织单元
@@ -341,7 +341,7 @@ CREATE TABLE deadline_rules (
 );
 ```
 
-（均沿用 00005 锁定策略：开 RLS + REVOKE，仅 db-proxy service_role 访问；db-proxy `ALLOWED_TABLES` 追加上述表。）
+（均沿用基线中的锁定策略：开 RLS + REVOKE，仅 db-proxy service_role 访问；db-proxy `ALLOWED_TABLES` 追加上述表。）
 
 ### 3.6 LLM 与上下文策略
 

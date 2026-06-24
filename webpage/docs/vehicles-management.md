@@ -9,8 +9,8 @@
 
 ## Supabase 前置配置
 
-1. 应用迁移 `supabase/migrations/00004_create_vehicles_sorted_view.sql`，创建 `vehicles_sorted` 视图。车头列表会直接查这个视图，并按 `data_source_rank` 排序。
-2. Supabase 端需要已有 `trailers_sorted` 视图，车挂列表直接查询该视图，并读取 `current_truck_plate` 展示当前车头。
+1. 应用基线迁移 `supabase/migrations/20260621171750_baseline.sql`，其中包含 `vehicles_sorted` 视图。车头列表会直接查这个视图，并按 `data_source_rank` 排序。
+2. 同一基线迁移也包含 `trailers_sorted` 视图，车挂列表直接查询该视图，并读取 `current_truck_plate` 展示当前车头。
 3. 在 Supabase Dashboard 创建 Storage bucket：
    - `vehicle-documents`
    - `driver-documents`

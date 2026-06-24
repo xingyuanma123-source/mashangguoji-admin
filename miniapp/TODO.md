@@ -32,12 +32,12 @@
   - [x] 删除 overtime_records 独立表
   - [x] 修改报账提交逻辑，加班状态写入 is_overtime 字段
   - [x] 修改加班统计逻辑，只统计已确认的记录
-- [x] 步骤11：切换到本地数据库
-  - [x] 更新 .env 文件配置本地数据库连接
+- [x] 步骤11：切换到 prod 数据库
+  - [x] 核实当前代码使用硬编码 prod 数据库连接
   - [x] 验证数据库表结构和数据完整性
   - [x] 验证 RLS 策略配置
   - [x] 验证存储桶配置
-- [x] 步骤12：硬编码数据库连接信息
+- [x] 步骤12：硬编码 prod 数据库连接信息
   - [x] 修改 src/client/supabase.ts，不使用环境变量
   - [x] 直接在代码中配置 URL 和 ANON_KEY
   - [x] 运行 lint 检查确保代码正确
@@ -52,10 +52,11 @@
 - 加班次数统计逻辑：按 record_date 去重后的天数，而非记录条数
   - 示例：3月5日提交5条记录都标加班，3月6日提交3条也标加班 → 加班次数 = 2天
 - 所有功能已完成，lint 检查通过
-- 已成功切换到本地数据库：https://rwjbladqwubgjotlygyy.supabase.co
-- 本地数据库验证完成：
+- 已成功切换到 prod 数据库：https://rwjbladqwubgjotlygyy.supabase.co
+- prod 数据库验证完成：
   - ✅ 6张表已创建（drivers, vehicles, expense_records, fee_types, service_staff, advance_fund_records）
   - ✅ 初始数据完整（13个司机、45个车牌、13种费用类型、1个管理员）
   - ✅ RLS 策略已配置
   - ✅ 存储桶已创建（app-a2kae62wkbnl_receipt_images）
 - 数据库连接信息已硬编码在 src/client/supabase.ts 中，不再依赖环境变量
+- TODO：此做法与根目录 AGENTS.md 的环境隔离纪律冲突，小程序环境切换待后续纳入（本轮不改代码）。

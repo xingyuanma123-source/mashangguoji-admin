@@ -5,7 +5,8 @@
 ### 1. 数据库连接切换
 - **原数据库**: https://backend.appmiaoda.com/projects/supabase288147506288701440
 - **新数据库**: https://rwjbladqwubgjotlygyy.supabase.co
-- **配置方式**: 硬编码在 `src/client/supabase.ts` 中（不使用环境变量）
+- **配置方式**: 当前代码实际为硬编码在 `src/client/supabase.ts` 中的 prod URL + ANON_KEY（不读取环境变量）
+- **TODO**: 此做法与根目录 `AGENTS.md` 的环境隔离纪律冲突，小程序环境切换待后续纳入（本轮不改代码）。
 
 ### 2. 数据库验证
 已验证以下内容：
@@ -59,11 +60,12 @@
 - ✅ TODO.md - 开发任务记录
 - ✅ DEPLOYMENT_SUMMARY.md - 本文档
 
-### 6. 硬编码数据库连接
+### 6. 硬编码 prod 数据库连接
 - ✅ 修改 `src/client/supabase.ts` 文件
-- ✅ 直接在代码中配置 URL 和 ANON_KEY
-- ✅ 不再依赖 `.env` 环境变量
+- ✅ 直接在代码中配置 prod URL 和 ANON_KEY
+- ✅ 当前不读取 `.env` 环境变量
 - ✅ Lint 检查通过
+- TODO：此做法与根目录 `AGENTS.md` 的环境隔离纪律冲突，小程序环境切换待后续纳入（本轮不改代码）。
 
 ## 📊 数据库当前状态
 
@@ -145,10 +147,10 @@ npm run dev:h5
 ### 数据库访问
 - **URL**: https://rwjbladqwubgjotlygyy.supabase.co
 - **管理后台**: https://supabase.com/dashboard
-- **配置位置**: `src/client/supabase.ts`（硬编码，不使用环境变量）
+- **配置位置**: `src/client/supabase.ts`（硬编码 prod URL + ANON_KEY，不读取环境变量）
 
 ### 安全注意事项
-1. 数据库连接信息已硬编码在代码中，便于部署
+1. 数据库连接信息当前硬编码在代码中；此做法与 `AGENTS.md` 环境隔离纪律冲突，后续需纳入小程序环境切换
 2. 定期备份数据库
 3. 监控数据库使用情况
 4. 及时更新司机密码（生产环境）
@@ -173,7 +175,7 @@ npm run dev:h5
 
 ## 🎉 总结
 
-数据库已成功切换到本地数据库，所有功能正常，可以开始使用！
+数据库已成功切换到 prod 数据库，所有功能正常，可以开始使用！
 
 ---
 
