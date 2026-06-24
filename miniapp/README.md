@@ -2,6 +2,8 @@
 
 这是一个为物流公司短驳司机设计的报账微信小程序，支持每日费用报账、多车辆管理、凭证上传、加班记录和备用金管理。
 
+> 本子项目使用 pnpm（见 package.json 的 packageManager）。装依赖/构建一律用 pnpm，不要用 npm —— 用 npm 会因 lockfile 不兼容报错。
+
 ## 🎯 项目简介
 
 **使用人群**: 公司短驳货运司机（约13人）
@@ -55,16 +57,16 @@ pnpm install
 
 ```bash
 # 微信小程序（需要微信开发者工具）
-npm run dev:weapp
+pnpm run dev:weapp
 
 # H5 网页版（快速调试）
-npm run dev:h5
+pnpm run dev:h5
 ```
 
 ### 代码检查
 
 ```bash
-npm run lint
+pnpm run lint
 ```
 
 ### 测试账号
@@ -120,9 +122,7 @@ src/
 
 ### 数据库配置
 
-当前代码实际在 `src/client/supabase.ts` 中硬编码 prod URL + ANON_KEY，不读取 `.env` 环境变量。
-
-TODO：此做法与根目录 `AGENTS.md` 的环境隔离纪律冲突，小程序环境切换待后续纳入（本轮不改代码）。
+当前代码在 `src/client/supabase.ts` 中读取 `TARO_APP_SUPABASE_URL`、`TARO_APP_SUPABASE_ANON_KEY`、`TARO_APP_APP_ID` 环境变量，并在构建期校验必填项。
 
 详细的数据库管理指南请查看 [DATABASE_GUIDE.md](./DATABASE_GUIDE.md)
 

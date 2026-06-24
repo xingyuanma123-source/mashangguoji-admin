@@ -3,11 +3,19 @@
 import {createClient} from '@supabase/supabase-js'
 import Taro, {showToast} from '@tarojs/taro'
 
-// Supabase 数据库配置（本地数据库）
-export const SUPABASE_URL: string = 'https://rwjbladqwubgjotlygyy.supabase.co'
-export const SUPABASE_ANON_KEY: string =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3amJsYWRxd3ViZ2pvdGx5Z3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNDUwNTYsImV4cCI6MjA4ODgyMTA1Nn0.dR9w2xmK9UpbNfO_dEAnJ2FqXcj1S2vQ15xexzskhA4'
-const appId: string = 'app-a2kae62wkbnl'
+// Supabase 数据库配置
+export const SUPABASE_URL: string = process.env.TARO_APP_SUPABASE_URL
+if (!SUPABASE_URL) {
+  throw new Error('缺少环境变量 TARO_APP_SUPABASE_URL')
+}
+export const SUPABASE_ANON_KEY: string = process.env.TARO_APP_SUPABASE_ANON_KEY
+if (!SUPABASE_ANON_KEY) {
+  throw new Error('缺少环境变量 TARO_APP_SUPABASE_ANON_KEY')
+}
+const appId: string = process.env.TARO_APP_APP_ID
+if (!appId) {
+  throw new Error('缺少环境变量 TARO_APP_APP_ID')
+}
 
 let noticed = false
 export const customFetch: typeof fetch = async (url: string, options: RequestInit) => {
