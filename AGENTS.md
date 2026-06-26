@@ -17,6 +17,13 @@
 - 任何碰服务器/数据库的操作，必须分清是 prod 还是 staging，操作前确认 project ref / IP / 端口，别误碰 prod。
 - prod 库 ref：rwjbladqwubgjotlygyy；staging 库 ref：ovtnnahdqljqqkponvhu。
 
+## Staging 测试服务器
+
+- IP：175.178.220.139（腾讯云轻量，Ubuntu 24.04）
+- 用途：给别人公网测试 + 上线演练（连 staging 库）
+- 登录：SSH 密钥免密，别名 `mashang-staging`（用户 ubuntu，密钥 id_ed25519_mashang_staging）
+- 注意：密钥私钥不进 git；服务器密码由本人掌握，不写入任何文件
+
 ## 密钥处理纪律
 
 - service_role key 等敏感密钥，默认由我本人填写，AI 不主动写入（除非我明确授权）。
