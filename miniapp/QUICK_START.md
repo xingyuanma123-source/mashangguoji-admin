@@ -28,13 +28,9 @@ npm install
 
 ### 2. 配置数据库
 
-数据库已配置完成，连接信息在 `.env` 文件中：
+数据库已配置完成；当前代码实际在 `src/client/supabase.ts` 中硬编码 prod URL + ANON_KEY，不读取 `.env` 环境变量。
 
-```env
-TARO_APP_SUPABASE_URL=https://rwjbladqwubgjotlygyy.supabase.co
-TARO_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-TARO_APP_APP_ID=app-a2kae62wkbnl
-```
+TODO：此做法与根目录 `AGENTS.md` 的环境隔离纪律冲突，小程序环境切换待后续纳入（本轮不改代码）。
 
 ### 3. 启动开发服务器
 

@@ -11,7 +11,7 @@
 | 设施 | 位置 | 说明 |
 |---|---|---|
 | 数据访问 | `db-proxy/`（service_role + 白名单） | 前端不直连 Supabase；新表/新桶必须加入 `db-proxy/authorize.js` 的 `ALLOWED_TABLES` / `ALLOWED_BUCKETS` |
-| RLS | `supabase/migrations/00005_lockdown_rls.sql` | anon/authenticated 已全量 REVOKE，新表默认即安全，无需写策略 |
+| RLS | `supabase/migrations/20260621171750_baseline.sql` | anon/authenticated 已全量 REVOKE，新表默认即安全，无需写策略 |
 | 角色 | `service_staff.role`：`admin` / `staff` | db-proxy session 携带 role；复用，不新增角色 |
 | OCR | `ocr-proxy/`（腾讯云 GeneralAccurateOCR）+ `src/lib/ocr.ts` | 当前仅支持图片（jpeg/png/webp ≤10MB），需扩展 PDF |
 | AI | `agent-proxy /api/agent/chat`（MiMo Token Plan） | 服务端统一调用，浏览器不持有模型密钥 |
@@ -97,10 +97,10 @@
 
 复用现有 `LegalConsult` 组件改造：支持从文件库选择 1-3 份文档，将其 `content_text`（截断）注入 system prompt 作为依据，要求回答时引用出处。不新建表，沿用对话即问即答。
 
-## 6. 数据库迁移 `supabase/migrations/00006_create_legal_system.sql`
+## 6. 数据库结构（已并入 `supabase/migrations/20260621171750_baseline.sql`）
 
 ```sql
--- 00006_create_legal_system.sql
+-- 法务结构已并入 20260621171750_baseline.sql
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- 合同台账
@@ -235,7 +235,7 @@ WHERE c.status = 'active'
   AND c.end_date IS NOT NULL
   AND c.end_date - CURRENT_DATE <= 90;
 
--- 沿用 00005 的锁定策略：仅开 RLS，不授权 anon/authenticated（db-proxy 走 service_role 不受影响）
+-- 沿用基线中的锁定策略：仅开 RLS，不授权 anon/authenticated（db-proxy 走 service_role 不受影响）
 ALTER TABLE contracts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contract_files ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contract_reviews ENABLE ROW LEVEL SECURITY;
@@ -284,13 +284,13 @@ src/types/legal.ts                       # 类型定义
 src/i18n/locales/zh.json, en.json        # legal.contracts.* / legal.library.* 全量文案
 ```
 
-操作日志：合同与文档的增改删调用现有 `operation_logs` 写入逻辑，`target_type` 沿用文本字段直接写 `'contract'` / `'legal_document'`（注意：00001 中该列有 CHECK 约束，需在 00006 中扩展该约束的枚举值）。
+操作日志：合同与文档的增改删调用现有 `operation_logs` 写入逻辑，`target_type` 沿用文本字段直接写 `'contract'` / `'legal_document'`（注意：基线中该列有 CHECK 约束，需在对应结构中扩展该约束的枚举值）。
 
 ## 10. 实施计划（Codex 任务拆分）
 
 | # | 任务 | 验收标准 |
 |---|---|---|
-| 1 | 迁移 00006 + 建桶 + db-proxy 白名单/权限 + 测试 | 迁移可重复执行；authorize.test.js 全绿；staff 不能 DELETE 法务表 |
+| 1 | 基线结构 + 建桶 + db-proxy 白名单/权限 + 测试 | 结构可重复验证；authorize.test.js 全绿；staff 不能 DELETE 法务表 |
 | 2 | 合同台账 CRUD（纯手动录入版）+ 路由/导航/i18n | 手动新增、编辑、筛选、详情、附件上传下载可用；中英文案完整 |
 | 3 | 到期预警：视图接入 + 台账预警区 + Dashboard 卡片 + 标记已处理 | 构造 end_date 在 25/55/85 天的测试数据，三档颜色与 ack 行为正确；auto_renew 合同按通知期提醒 |
 | 4 | OCR 录入链路：ocr-proxy PDF 支持 + 上传→识别→AI 抽取→预填表单 | 上传 3 页 PDF 能识别并预填 ≥6 个字段；失败可降级手录 |

@@ -47,6 +47,8 @@
 
 ### 安装依赖
 
+> 本项目使用 pnpm(packageManager: pnpm@10.30.3),请用 pnpm install / pnpm run dev:staging,不要用 npm —— 用 npm 装依赖会因 lockfile 不兼容报错。
+
 ```bash
 pnpm install
 ```
@@ -55,16 +57,16 @@ pnpm install
 
 ```bash
 # 微信小程序（需要微信开发者工具）
-npm run dev:weapp
+pnpm run dev:weapp
 
 # H5 网页版（快速调试）
-npm run dev:h5
+pnpm run dev:h5
 ```
 
 ### 代码检查
 
 ```bash
-npm run lint
+pnpm run lint
 ```
 
 ### 测试账号
@@ -120,13 +122,7 @@ src/
 
 ### 数据库配置
 
-数据库连接信息在 `.env` 文件中：
-
-```env
-TARO_APP_SUPABASE_URL=https://rwjbladqwubgjotlygyy.supabase.co
-TARO_APP_SUPABASE_ANON_KEY=...
-TARO_APP_APP_ID=app-a2kae62wkbnl
-```
+当前代码在 `src/client/supabase.ts` 中读取 `TARO_APP_SUPABASE_URL`、`TARO_APP_SUPABASE_ANON_KEY`、`TARO_APP_APP_ID` 环境变量，并在构建期校验必填项。
 
 详细的数据库管理指南请查看 [DATABASE_GUIDE.md](./DATABASE_GUIDE.md)
 
@@ -184,7 +180,7 @@ TARO_APP_APP_ID=app-a2kae62wkbnl
 - ✅ 所有功能已完成
 - ✅ Lint 检查通过
 - ✅ 数据库连接测试通过
-- ✅ 已接入本地数据库
+- ✅ 已接入 prod 数据库
 - ✅ 可以正常使用
 
 ---
