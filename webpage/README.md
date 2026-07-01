@@ -62,7 +62,7 @@ SITE_NAME=mashangguoji-staging ./deploy-frontend.sh
 
 ## OCR 代理配置
 
-法律咨询 Chat 的图片识别会请求 `/api/ocr/recognize`。本地开发环境已在 `vite.config.dev.ts` 中代理到 `http://119.91.129.106`；生产环境需要在服务器 Nginx 配置中把 `/api/ocr/` 反代到 OCR 代理服务。
+法律咨询 Chat 的图片识别会请求 `/api/ocr/recognize`。本地开发环境可在 `vite.config.dev.ts` 中代理到你的 OCR 代理服务；生产环境需要在服务器 Nginx 配置中把 `/api/ocr/` 反代到 OCR 代理服务。
 
 在 `/etc/nginx/sites-enabled/mashangguoji` 的现有 `location /` 之前添加：
 
@@ -128,13 +128,13 @@ location /api/db/ {
 
 ## JT808 TCP 服务部署
 
-项目根目录新增了 [jt808-server/index.js](/Users/mxy/Desktop/mashang%20project_副本/webpage/jt808-server/index.js)、[jt808-server/package.json](/Users/mxy/Desktop/mashang%20project_副本/webpage/jt808-server/package.json) 和 [jt808-server/ecosystem.config.js](/Users/mxy/Desktop/mashang%20project_副本/webpage/jt808-server/ecosystem.config.js)，用于单独部署 JT/T 808 TCP 服务。
+项目根目录新增了 `jt808-server/index.js`、`jt808-server/package.json` 和 `jt808-server/ecosystem.config.js`，用于单独部署 JT/T 808 TCP 服务。
 
 ### 部署前准备
 
 1. 修改 `jt808-server/ecosystem.config.js` 中的 `SUPABASE_URL` 和 `SUPABASE_KEY`
 2. 确认腾讯云服务器已安装 Node.js、PM2、rsync 和 OpenSSH
-3. 按需修改根目录 [deploy.sh](/Users/mxy/Desktop/mashang%20project_副本/webpage/deploy.sh) 里的 `SERVER_HOST`
+3. 按需修改根目录 `deploy.sh` 里的 `SERVER_HOST`
 
 ### 部署命令
 
