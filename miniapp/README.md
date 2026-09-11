@@ -2,6 +2,8 @@
 
 这是一个为物流公司短驳司机设计的报账微信小程序，支持每日费用报账、多车辆管理、凭证上传、加班记录和备用金管理。
 
+首次开发请按 [快速开始](QUICK_START.md) 操作；环境以 [数据库配置](DATABASE_CONFIG.md) 为准。其他资料从 [文档导航](../docs/README.md) 查找。下方功能介绍用于理解项目，不代替当前版本验收。
+
 ## 🎯 项目简介
 
 **使用人群**: 短驳货运司机和物流运营团队
@@ -50,17 +52,17 @@
 > 本项目使用 pnpm(packageManager: pnpm@10.30.3),请用 pnpm install / pnpm run dev:staging,不要用 npm —— 用 npm 装依赖会因 lockfile 不兼容报错。
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 ### 启动开发
 
 ```bash
 # 微信小程序（需要微信开发者工具）
-pnpm run dev:weapp
+pnpm run dev:staging
 
 # H5 网页版（快速调试）
-pnpm run dev:h5
+pnpm run dev:h5 --mode staging
 ```
 
 ### 代码检查
