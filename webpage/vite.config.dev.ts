@@ -22,7 +22,7 @@ export default defineConfig({
     proxy: {
       ...(userConfig.server?.proxy || {}),
       '/api/ocr': {
-        target: 'http://119.91.129.106',
+        target: 'http://127.0.0.1:4004',
         changeOrigin: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {
