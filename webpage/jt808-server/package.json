@@ -5,7 +5,8 @@
   "description": "JT/T 808 TCP service managed by PM2",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test ecosystem.config.test.js"
   },
   "engines": {
     "node": ">=18"
