@@ -13,6 +13,7 @@
 |---|---|:--:|:--:|---|
 | 20260621171750 | baseline.sql | ✅ | ✅ | 基线(29 表 / 3 视图)。prod 实际由 21 条旧粒度 history 压平而来,表名一致、history 记录不同,属历史遗留,不处理。 |
 | 20260623165844 | dispatch_management.sql | ✅ | ❌ | 派遣模块结构。从 staging history 找回(md5 校验一致),纯结构无数据操作;vehicles_sorted 视图经核对仅在末尾增 type_seq/operator 两列,不影响 prod 现有列。**上线派遣前必须 apply 到 prod。** |
+| 20260630111231 | payroll_management.sql | ✅ | ❌ | 报账工资、提成结算和备用金余额结构。已在 staging migration history 确认应用，功能仍处于 WIP；**完成 staging 验证前不得 apply 到 prod。** |
 
 ## 标准操作(SOP)
 新增数据库改动时,严格按以下顺序:
