@@ -23,16 +23,16 @@
 
 ## 本地开发
 
-在 `webpage/` 目录执行：
+推荐在仓库根目录执行：
 
 ```bash
-npm ci
-npm run dev:staging
+npm run setup
+npm run dev
 ```
 
-测试启动入口把数据库、AI、OCR 请求分别转发到本机 4002、4003、4004。代理需先由负责人安排 staging 配置并启动，否则前端可以显示，但登录或相关 API 不可用。查看 [服务说明](../docs/SERVICES.md) 确定实际需要哪个服务。
+负责人配置好 `webpage/db-proxy/.env` 后，根目录启动命令会校验 staging、检查端口，再启动本机 4002 数据库代理和 5173 前端。Ctrl+C 同时退出。AI/OCR 按需另行配置，分别使用本机 4003/4004；查看 [服务说明](../docs/SERVICES.md)。
 
-旧的 `npm run dev` / `vite.config.dev.ts` 配置包含正式 OCR 地址，新人按上述测试入口开发。实际密钥不能放进前端或 Git。
+若只想启动前端，可在 `webpage/` 运行 `npm run dev` 或 `npm run dev:staging`，这两个入口均使用本机测试代理。实际密钥不能放进前端或 Git。
 
 ## 提交前
 
