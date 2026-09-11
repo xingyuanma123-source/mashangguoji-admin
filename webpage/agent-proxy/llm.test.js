@@ -3,7 +3,7 @@ const assert = require('node:assert');
 
 process.env.LLM_API_KEY = process.env.LLM_API_KEY || 'test-key';
 process.env.LLM_ENDPOINT = process.env.LLM_ENDPOINT || 'http://model.test/chat/completions';
-process.env.AGENT_MODEL = process.env.AGENT_MODEL || 'mimo-v2.5-pro';
+process.env.AGENT_MODEL = process.env.AGENT_MODEL || 'deepseek-v4-pro';
 process.env.LLM_RETRY_BASE_MS = '0';
 
 const { chatCompletion } = require('./llm');
