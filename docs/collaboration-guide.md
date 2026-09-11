@@ -2,7 +2,7 @@
 
 仓库：https://github.com/xingyuanma123-source/mashangguoji-admin （Public）
 
-先接受 GitHub 协作者邀请。网页可以直接看代码；开发请 clone 仓库，后续用 Git 同步。项目负责人提供测试账号和所需的测试环境配置，不提供正式环境管理密钥。
+先接受 GitHub 协作者邀请。网页可以直接看代码；开发请 clone 仓库，后续用 Git 同步。项目负责人提供测试账号和所需的测试环境配置，不提供正式环境管理密钥。main 保护规则已保存并核实：PR、至少一人审批、四项 CI 检查、同步最新 main，管理员同样受约束。
 
 ## 第一次获取项目
 
@@ -126,5 +126,10 @@ git push
 | `codex/review-planning` | 规划与审计文档 | `codex/ci-collaboration` |
 | `codex/review-payroll` | 工资模块 WIP | `codex/ci-collaboration` |
 | `feature/dispatch-management` | 已有派遣 WIP，旧基线 | `main`，合并前先同步并验证 |
+| `codex/review-onboarding` | 本协作流程及 staging 开发入口 | `codex/ci-collaboration` |
 
 这些 PR 按依赖审查；前置 PR 合入 main 后，将依赖 PR 的 base 改为 main，并同步 main、重新跑 CI。保留原来的分支，避免丢失旧工作。工资/派遣未验收前保持 Draft。
+
+PR 入口：[CI #15](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/15)、[开源说明 #16](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/16)、[法律 AI #17](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/17)、[JT808 #18](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/18)、[staging 配置 #19](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/19)、[规划文档 #20](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/20)、[协作流程 #21](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/21)、[工资草稿 #22](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/22)、[派遣草稿 #23](https://github.com/xingyuanma123-source/mashangguoji-admin/pull/23)。
+
+建议首先 review #15，再按依赖 review 其余 PR。只有代码作者之外的协作者才能为其提供有效审批；不要为了赶进度关闭 main 的保护规则。
