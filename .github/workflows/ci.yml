@@ -24,6 +24,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test
+      - name: Test JT808 configuration when present
+        if: ${{ hashFiles('webpage/jt808-server/ecosystem.config.test.js') != '' }}
+        run: npm test --prefix jt808-server
       - run: npm run build
 
   proxy:
