@@ -10,6 +10,7 @@
 | --- | --- |
 | 看这次整理的最新源码 | [最新源码汇总](https://github.com/xingyuanma123-source/mashangguoji-admin/tree/codex/collaboration-complete) |
 | 搞清楚分支、PR、staging 是什么 | [新手指南](docs/START-HERE.md) |
+| 找启动说明、服务说明和历史资料 | [文档导航](docs/README.md) |
 | 把项目跑起来、一起改代码 | [协作者操作流程](https://github.com/xingyuanma123-source/mashangguoji-admin/blob/codex/collaboration-complete/docs/collaboration-guide.md) |
 | 看待审核的改动 | [开发任务 / Pull requests](https://github.com/xingyuanma123-source/mashangguoji-admin/pulls) |
 
