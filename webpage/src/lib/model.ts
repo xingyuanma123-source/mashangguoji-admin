@@ -1,3 +1,5 @@
+import { readStreamData } from '@/lib/streamData';
+
 export type ModelMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -61,62 +63,17 @@ export async function chatWithModelStream(
     throw new Error('模型流式响应不可用，请稍后重试。');
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder('utf-8');
-  let buffer = '';
   let fullText = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-
-    if (done) {
-      break;
-    }
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split(/\r?\n/);
-    buffer = lines.pop() ?? '';
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-
-      if (!trimmedLine || !trimmedLine.startsWith('data:')) {
-        continue;
+  for await (const payload of readStreamData(response.body)) {
+    try {
+      const parsed = readStreamEvent(payload);
+      if (parsed.type === 'delta' && parsed.text) {
+        fullText += parsed.text;
+        onChunk(parsed.text);
       }
-
-      const payload = trimmedLine.slice(5).trim();
-
-      if (!payload || payload === '[DONE]') {
-        continue;
-      }
-
-      try {
-        const parsed = readStreamEvent(payload);
-        if (parsed.type === 'delta' && parsed.text) {
-          fullText += parsed.text;
-          onChunk(parsed.text);
-        }
-      } catch (error) {
-        if (!(error instanceof SyntaxError)) throw error;
-        // Ignore malformed stream frames and continue parsing later chunks.
-      }
-    }
-  }
-
-  const finalBuffered = buffer.trim();
-  if (finalBuffered.startsWith('data:')) {
-    const payload = finalBuffered.slice(5).trim();
-    if (payload && payload !== '[DONE]') {
-      try {
-        const parsed = readStreamEvent(payload);
-        if (parsed.type === 'delta' && parsed.text) {
-          fullText += parsed.text;
-          onChunk(parsed.text);
-        }
-      } catch (error) {
-        if (!(error instanceof SyntaxError)) throw error;
-        // Ignore malformed trailing frame.
-      }
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      // Ignore malformed stream frames and continue parsing later chunks.
     }
   }
 
