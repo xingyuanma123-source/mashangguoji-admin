@@ -1,20 +1,4 @@
-#!/bin/bash
-
-if ! command -v ast-grep >/dev/null 2>&1; then
-    echo "Skipping auth provider check: ast-grep is not installed."
-    exit 0
-fi
-
-auth_provider_output=$(ast-grep scan -r .rules/noNestedRouteGuard.yml 2>/dev/null)
-
-if [ -z "$auth_provider_output" ]; then
-    exit 0
-fi
-
-echo "⚠️  Issue:"
-echo "AuthProvider should not wrap RouteGuard component."
-echo "✅ Correct usage:"
-echo "  <AuthProvider>{children}</AuthProvider>"
-echo "$auth_provider_output"
-
-exit 1
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec node "${SCRIPT_DIR}/check-project.mjs" auth
