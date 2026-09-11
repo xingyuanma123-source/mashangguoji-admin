@@ -64,6 +64,8 @@ SITE_NAME=mashangguoji-staging ./deploy-frontend.sh
 
 法律咨询 Chat 的图片识别会请求 `/api/ocr/recognize`。本地开发环境可在 `vite.config.dev.ts` 中代理到你的 OCR 代理服务；生产环境需要在服务器 Nginx 配置中把 `/api/ocr/` 反代到 OCR 代理服务。
 
+`ocr-proxy` 默认端口是 `3001`（见 `webpage/ocr-proxy/.env.example` 和 `server.js`）；staging 如后续独立部署，建议使用 `PORT=4004`，避免和 prod/default 端口混用。
+
 在 `/etc/nginx/sites-enabled/mashangguoji` 的现有 `location /` 之前添加：
 
 ```nginx
