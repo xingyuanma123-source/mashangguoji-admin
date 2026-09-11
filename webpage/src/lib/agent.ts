@@ -1,3 +1,4 @@
+import { readStreamData } from '@/lib/streamData';
 import type { AgentStreamEvent } from '@/types/agent';
 import { isExpiredProxySession, notifyExpiredProxySession } from '@/lib/proxySession';
 
@@ -25,28 +26,11 @@ async function streamSse(url: string, body: Record<string, unknown> | undefined,
   }
   if (!response.body) throw new Error('Agent 流式响应不可用');
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder('utf-8');
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const frames = buffer.split('\n\n');
-    buffer = frames.pop() ?? '';
-    for (const frame of frames) {
-      for (const line of frame.split('\n')) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('data:')) continue;
-        const payload = trimmed.slice(5).trim();
-        if (!payload) continue;
-        try {
-          onEvent(JSON.parse(payload) as AgentStreamEvent);
-        } catch {
-          // 忽略坏帧
-        }
-      }
+  for await (const payload of readStreamData(response.body)) {
+    try {
+      onEvent(JSON.parse(payload) as AgentStreamEvent);
+    } catch {
+      // 保持现有 Agent 行为：坏帧或回调异常不阻断后续事件。
     }
   }
 }
