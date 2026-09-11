@@ -2,6 +2,8 @@
 
 [返回项目首页](../README.md)
 
+要找具体说明，打开 [文档导航](README.md)；不确定要启动哪个代理，先看 [服务用途](SERVICES.md)。
+
 ## 1. 我应该看哪份代码？
 
 先点 [最新源码汇总](https://github.com/xingyuanma123-source/mashangguoji-admin/tree/codex/collaboration-complete)。这是此次交接的查看入口，文件夹可以直接点击打开，不需要先下载。
