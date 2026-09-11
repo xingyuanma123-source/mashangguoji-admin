@@ -50,6 +50,8 @@ export interface Vehicle {
   asset_owner?: string | null;
   vehicle_model_short?: string | null;
   vehicle_category?: string | null;
+  type_seq?: number | null;
+  operator?: string | null;
   operating_company_id?: number | null;
   brand?: string | null;
   model?: string | null;
@@ -77,6 +79,7 @@ export interface Vehicle {
 
 export interface VehicleSortedRow extends Vehicle {
   data_source_rank?: number | null;
+  operating_company_name?: string | null;
   operating_company_short_name?: string | null;
 }
 
@@ -209,6 +212,39 @@ export interface OperationLog {
   target_type: 'expense_record' | 'driver' | 'vehicle' | 'advance_fund' | 'fee_type' | 'staff' | 'contract' | 'legal_document';
   target_id: number;
   detail?: string;
+  created_at: string;
+}
+
+export interface Customer {
+  id: number;
+  name: string;
+  created_at: string;
+  created_by?: number | null;
+}
+
+export interface DispatchRecord {
+  id: number;
+  vehicle_id: number;
+  dispatch_date: string;
+  customer_id: number;
+  agent_id: number;
+  is_substitute_driver: boolean;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DispatchRecordWithRelations extends DispatchRecord {
+  customer?: Pick<Customer, 'id' | 'name'> | null;
+  agent?: Pick<ServiceStaffSession, 'id' | 'name'> | null;
+}
+
+export interface DispatchOperationLog {
+  id: number;
+  record_id: number;
+  action: 'create' | 'update' | 'delete';
+  operator_id: number;
+  detail: Record<string, unknown>;
   created_at: string;
 }
 

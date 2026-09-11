@@ -83,6 +83,7 @@
     "summary": "总表",
     "drivers": "司机管理",
     "vehicles": "车辆管理",
+    "dispatch": "车辆派遣",
     "vehicleTracking": "车辆定位",
     "advanceFunds": "备用金",
     "feeTypes": "费用类型管理",

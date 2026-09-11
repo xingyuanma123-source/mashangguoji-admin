@@ -37,6 +37,7 @@ const Navbar: React.FC = () => {
     { path: '/summary', label: t('nav.summary') },
     { path: '/drivers', label: t('nav.drivers') },
     { path: '/vehicles', label: t('nav.vehicles') },
+    { path: '/dispatch', label: t('nav.dispatch') },
     { path: '/advance-funds', label: t('nav.advanceFunds') },
   ];
 

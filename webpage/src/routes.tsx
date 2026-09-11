@@ -15,6 +15,7 @@ const VehiclesPage = lazy(() => import('@/pages/VehiclesPage'));
 const VehicleDetailPage = lazy(() => import('@/pages/VehicleDetailPage'));
 const TrailerDetailPage = lazy(() => import('@/pages/TrailerDetailPage'));
 const VehicleTrackingPage = lazy(() => import('@/pages/VehicleTracking'));
+const DispatchBoardPage = lazy(() => import('@/pages/DispatchBoardPage'));
 const AdvanceFundsPage = lazy(() => import('@/pages/AdvanceFundsPage'));
 const FeeTypesPage = lazy(() => import('@/pages/FeeTypesPage'));
 const StaffPage = lazy(() => import('@/pages/StaffPage'));
@@ -66,6 +67,10 @@ const routes: RouteConfig[] = [
   {
     path: '/vehicle-tracking',
     component: VehicleTrackingPage,
+  },
+  {
+    path: '/dispatch',
+    component: DispatchBoardPage,
   },
   {
     path: '/advance-funds',

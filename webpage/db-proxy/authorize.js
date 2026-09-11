@@ -8,6 +8,7 @@ const ALLOWED_TABLES = [
   'operating_companies', 'vehicle_documents', 'vehicle_locations',
   'vehicles_sorted', 'trailers_sorted', 'vehicles_trailer',
   'truck_trailer_assignments',
+  'customers', 'dispatch_records', 'dispatch_operation_logs',
   'contracts', 'contract_files', 'contract_reviews', 'contract_alert_acks',
   'legal_documents', 'legal_document_versions', 'contracts_expiring',
   'matters', 'matter_links', 'agent_runs', 'legal_drafts', 'obligations',
@@ -109,6 +110,36 @@ function authorizeRest(path, method, session) {
     return deny(403, '敏感账号表必须使用明确字段列表');
   }
 
+  if (table === 'customers' && method === 'POST') {
+    return { ok: true, path, table, forceCustomerCreatedBy: session.id };
+  }
+  if (table === 'dispatch_records') {
+    if (method === 'DELETE') {
+      return deny(403, '派遣记录只能软删除');
+    }
+    if (method === 'POST') {
+      return { ok: true, path, table, forceDispatchAgentId: session.id };
+    }
+    if (method === 'PATCH') {
+      if (session.role !== 'admin') {
+        url.searchParams.set('agent_id', `eq.${session.id}`);
+      }
+      return { ok: true, path: `${url.pathname}${url.search}`, table, stripDispatchAgentId: true };
+    }
+  }
+  if (table === 'dispatch_operation_logs') {
+    if (method === 'PATCH' || method === 'DELETE') {
+      return deny(403, '派遣操作日志不允许修改或删除');
+    }
+    if (method === 'POST') {
+      return { ok: true, path, table, forceDispatchOperatorId: session.id };
+    }
+    if (session.role !== 'admin' && isRead) {
+      url.searchParams.set('operator_id', `eq.${session.id}`);
+      return { ok: true, path: `${url.pathname}${url.search}`, table };
+    }
+  }
+
   // 非管理员只能看自己的操作日志（密码检查必须在此分支之前完成）
   if (table === 'operation_logs' && session.role !== 'admin' && isRead) {
     url.searchParams.set('operator_id', `eq.${session.id}`);
@@ -138,10 +169,23 @@ function scrubPasswords(value) {
   return value;
 }
 
+function applyProxyManagedFields(payload, decision) {
+  const rows = Array.isArray(payload) ? payload : [payload];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    if (decision.forceCustomerCreatedBy != null) row.created_by = decision.forceCustomerCreatedBy;
+    if (decision.forceDispatchAgentId != null) row.agent_id = decision.forceDispatchAgentId;
+    if (decision.stripDispatchAgentId) delete row.agent_id;
+    if (decision.forceDispatchOperatorId != null) row.operator_id = decision.forceDispatchOperatorId;
+  }
+  return payload;
+}
+
 module.exports = {
   ALLOWED_TABLES,
   ALLOWED_BUCKETS,
   SENSITIVE_TABLES,
   authorizeSupabaseProxy,
+  applyProxyManagedFields,
   scrubPasswords,
 };
