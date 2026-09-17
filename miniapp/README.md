@@ -2,9 +2,11 @@
 
 这是一个为物流公司短驳司机设计的报账微信小程序，支持每日费用报账、多车辆管理、凭证上传、加班记录和备用金管理。
 
+首次开发请按 [快速开始](QUICK_START.md) 操作；环境以 [数据库配置](DATABASE_CONFIG.md) 为准。其他资料从 [文档导航](../docs/README.md) 查找。下方功能介绍用于理解项目，不代替当前版本验收。
+
 ## 🎯 项目简介
 
-**使用人群**: 公司短驳货运司机（约13人）
+**使用人群**: 短驳货运司机和物流运营团队
 
 **核心场景**: 司机每天跑多趟短驳，每趟可能开不同的车。一天结束后统一提交当天所有车辆的费用报账。客服在网页端逐条确认后自动录入总表。
 
@@ -17,7 +19,7 @@
 ### 1. 登录系统
 - 用户名+密码登录
 - 登录状态保持
-- 13个司机账号（初始密码：123456）
+- 支持按司机账号隔离数据访问
 
 ### 2. 报账提交（首页）
 - 日期选择和加班标记
@@ -50,17 +52,17 @@
 > 本项目使用 pnpm(packageManager: pnpm@10.30.3),请用 pnpm install / pnpm run dev:staging,不要用 npm —— 用 npm 装依赖会因 lockfile 不兼容报错。
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 ### 启动开发
 
 ```bash
 # 微信小程序（需要微信开发者工具）
-pnpm run dev:weapp
+pnpm run dev:staging
 
 # H5 网页版（快速调试）
-pnpm run dev:h5
+pnpm run dev:h5 --mode staging
 ```
 
 ### 代码检查
@@ -71,13 +73,7 @@ pnpm run lint
 
 ### 测试账号
 
-| 姓名 | 账号 | 密码 |
-|------|------|------|
-| 徐良斌 | xuliangbin | 123456 |
-| 陆贻祥 | luyixiang | 123456 |
-| 仇兆春 | qiuzhaochun | 123456 |
-
-更多账号请查看 [PROJECT_STATUS.md](./PROJECT_STATUS.md)
+请在自己的 Supabase 环境中创建测试司机账号。不要在公开仓库提交真实账号或默认密码。
 
 ---
 
@@ -111,13 +107,13 @@ src/
 
 ## 🗄️ 数据库
 
-### 数据表（6张）
+### 核心数据表
 
-1. **drivers** - 司机表（13个司机）
-2. **vehicles** - 车辆表（45个车牌）
+1. **drivers** - 司机表
+2. **vehicles** - 车辆表
 3. **expense_records** - 报账记录表（核心表）
-4. **fee_types** - 费用类型配置表（13种费用类型）
-5. **service_staff** - 客服人员表（1个管理员）
+4. **fee_types** - 费用类型配置表
+5. **service_staff** - 客服人员表
 6. **advance_fund_records** - 备用金充值记录表
 
 ### 数据库配置
@@ -180,8 +176,8 @@ src/
 - ✅ 所有功能已完成
 - ✅ Lint 检查通过
 - ✅ 数据库连接测试通过
-- ✅ 已接入 prod 数据库
-- ✅ 可以正常使用
+- ✅ 支持 staging / production 环境切换
+- ✅ 支持内部运营流程使用
 
 ---
 
