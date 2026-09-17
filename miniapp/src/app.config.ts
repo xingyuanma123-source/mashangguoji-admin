@@ -20,20 +20,20 @@ export default defineAppConfig({
       {
         pagePath: 'pages/submit/index',
         text: '报账',
-        iconPath: 'static/images/tab_submit.png',
-        selectedIconPath: 'static/images/tab_submit_selected.png'
+        iconPath: './static/images/tab_submit.png',
+        selectedIconPath: './static/images/tab_submit_selected.png'
       },
       {
         pagePath: 'pages/records/index',
         text: '记录',
-        iconPath: 'static/images/tab_records.png',
-        selectedIconPath: 'static/images/tab_records_selected.png'
+        iconPath: './static/images/tab_records.png',
+        selectedIconPath: './static/images/tab_records_selected.png'
       },
       {
         pagePath: 'pages/profile/index',
         text: '我的',
-        iconPath: 'static/images/tab_profile.png',
-        selectedIconPath: 'static/images/tab_profile_selected.png'
+        iconPath: './static/images/tab_profile.png',
+        selectedIconPath: './static/images/tab_profile_selected.png'
       }
     ]
   },

@@ -9,13 +9,10 @@ EXIT_CODES+=($?)
 npx tsgo -p tsconfig.check.json
 EXIT_CODES+=($?)
 
-./scripts/checkNavigation.sh
+node --test scripts/check-project.test.mjs
 EXIT_CODES+=($?)
 
-./scripts/checkIconPath.sh
-EXIT_CODES+=($?)
-
-./scripts/checkAuthProvider.sh
+node scripts/check-project.mjs
 EXIT_CODES+=($?)
 
 ALL_PASSED=true
