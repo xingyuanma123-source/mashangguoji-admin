@@ -32,7 +32,7 @@ import { recognizeImage } from '@/lib/ocr';
 import type { ServiceStaffSession } from '@/types/database';
 import type { Contract, ContractFile, ContractReviewRecord, ExpiringContract, LegalDocument } from '@/types/legal';
 
-const reviewModel = 'mimo-v2.5-pro';
+const reviewModel = 'deepseek-v4-pro';
 
 export default function ContractsPage() {
   const { t } = useTranslation();
