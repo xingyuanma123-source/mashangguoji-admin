@@ -4,7 +4,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:staging": "vite --config vite.config.staging.ts",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsgo -p tsconfig.check.json",

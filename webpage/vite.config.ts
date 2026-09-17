@@ -22,12 +22,9 @@ export default defineConfig({
     },
   },
   server: {
-    host: '127.0.0.1',
-    port: 5173,
-    strictPort: true,
     proxy: {
       '/api/ocr': {
-        target: 'http://127.0.0.1:4004',
+        target: 'http://119.91.129.106',
         changeOrigin: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {
@@ -36,11 +33,11 @@ export default defineConfig({
         },
       },
       '/api/db': {
-        target: 'http://127.0.0.1:4002',
+        target: 'http://127.0.0.1:3002',
         changeOrigin: false,
       },
       '/api/agent': {
-        target: 'http://127.0.0.1:4003',
+        target: 'http://127.0.0.1:3003',
         changeOrigin: false,
       },
     },
