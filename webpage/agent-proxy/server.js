@@ -100,7 +100,7 @@ app.post('/api/agent/runs/:id/reject', requireSession, async (req, res) => {
   }
 });
 
-// 通用 MiMo 文本接口：合同抽取、风险扫描等前端能力只通过服务端调用模型。
+// 通用 DeepSeek 文本接口：合同抽取、风险扫描等前端能力只通过服务端调用模型。
 app.post('/api/agent/chat', requireSession, async (req, res) => {
   const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
   if (!messages.length || messages.length > 20) return res.status(400).json({ error: '消息格式无效' });

@@ -14,7 +14,7 @@
 | RLS | `supabase/migrations/20260621171750_baseline.sql` | anon/authenticated 已全量 REVOKE，新表默认即安全，无需写策略 |
 | 角色 | `service_staff.role`：`admin` / `staff` | db-proxy session 携带 role；复用，不新增角色 |
 | OCR | `ocr-proxy/`（腾讯云 GeneralAccurateOCR）+ `src/lib/ocr.ts` | 当前仅支持图片（jpeg/png/webp ≤10MB），需扩展 PDF |
-| AI | `agent-proxy /api/agent/chat`（MiMo Token Plan） | 服务端统一调用，浏览器不持有模型密钥 |
+| AI | `agent-proxy /api/agent/chat`（DeepSeek V4 Pro） | 服务端统一调用，浏览器不持有模型密钥 |
 | 已有法务页 | `/legal`：`ContractReview` / `LegalConsult` / `ContractTemplates` | AI 审查历史已落库 `legal_reviews`（保留不动） |
 | 上传 | `src/hooks/use-supabase-upload.ts` + `src/components/dropzone.tsx` | 复用 |
 | 路由 | `src/routes.tsx`（`RouteConfig`，支持 `adminOnly`） | 复用 |
@@ -83,7 +83,7 @@
 
 左侧分类树（doc_type + 标签筛选）+ 顶部全文搜索框；列表显示标题/类型/标签/当前版本/更新时间；详情抽屉含版本历史、预览/下载、「向 AI 提问」入口（§5.3）。
 
-## 5. AI 能力（复用服务端 MiMo 网关）
+## 5. AI 能力（复用服务端 DeepSeek 网关）
 
 ### 5.1 合同风险扫描
 
@@ -303,7 +303,7 @@ src/i18n/locales/zh.json, en.json        # legal.contracts.* / legal.library.* �
 
 ## 11. 风险与待决策点
 
-1. **数据外发**：合同全文会送 MiMo Token Plan 与腾讯 OCR。模型凭证仅保存在 agent-proxy；如有保密等级高的合同，建议后续加「不送 AI」标记。
+1. **数据外发**：合同全文会送 DeepSeek V4 Pro 与腾讯 OCR。模型凭证仅保存在 agent-proxy；如有保密等级高的合同，建议后续加「不送 AI」标记。
 2. **上下文长度**：长合同 + 模板对照可能超限，已规定 12k 字符截断；后续可换分段审查。
 3. **docx 文本提取**：Phase 3 处理（候选：服务端 mammoth）。在此之前 docx 仅可存档与下载，不参与全文检索。
 4. **腾讯 OCR PDF 页数限制**：单文档 >20 页需拆分上传；台账场景下罕见，先按报错提示处理。
