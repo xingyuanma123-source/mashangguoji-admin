@@ -524,7 +524,7 @@ runbook 发现的问题：
 `ocr-proxy` 本阶段暂不部署。以后需要图片 OCR 时，再补：
 
 - `/home/ubuntu/ocr-proxy` staging 部署目录。
-- staging `.env`，包含腾讯云 OCR 密钥，用户本人填。
+- staging `.env`，包含腾讯云 OCR 密钥，用户本人填；端口使用 `PORT=4004`。
 - PM2 进程名建议 `ocr-proxy-staging`。
-- Nginx `/api/ocr/` 反代和 `client_max_body_size`。
+- Nginx `/api/ocr/` 反代到 `http://127.0.0.1:4004`，并配置 `client_max_body_size`。
 - 对应健康检查和回滚步骤。
