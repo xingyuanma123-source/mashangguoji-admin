@@ -8,6 +8,6 @@ export default defineConfig({
     },
   },
   test: {
-    exclude: ['**/node_modules/**', '**/dist/**', 'db-proxy/**', 'ocr-proxy/**', 'agent-proxy/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'db-proxy/**', 'ocr-proxy/**', 'agent-proxy/**', 'jt808-server/**'],
   },
 });
