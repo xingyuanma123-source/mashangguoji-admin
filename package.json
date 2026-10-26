@@ -1,0 +1,11 @@
+{
+  "name": "mashang-development",
+  "private": true,
+  "scripts": {
+    "setup": "npm ci --prefix webpage && npm ci --prefix webpage/db-proxy && npm ci --prefix webpage/agent-proxy && pnpm --dir miniapp install --frozen-lockfile",
+    "dev": "node webpage/scripts/dev.mjs",
+    "dev:miniapp": "pnpm --dir miniapp dev:staging",
+    "check": "npm run lint --prefix webpage && npm test --prefix webpage && npm run build --prefix webpage && npm test --prefix webpage/db-proxy && npm test --prefix webpage/agent-proxy && npm run test --if-present --prefix webpage/jt808-server && pnpm --dir miniapp lint && pnpm --dir miniapp build:staging"
+  },
+  "engines": { "node": ">=20.12.0" }
+}
